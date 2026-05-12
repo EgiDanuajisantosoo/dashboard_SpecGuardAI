@@ -3,9 +3,13 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('ui.dashboard');
 });
 
-Route::get('/tailwind-test', function () {
-    return view('tailwind-test');
+Route::get('/openspec', function () {
+    return view('ui.openspec');
+});
+
+Route::get('/compliance', function () {
+    return view('ui.compliance');
 });
