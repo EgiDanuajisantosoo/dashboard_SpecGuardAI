@@ -11,6 +11,7 @@ endpoint:
 
 requirements:
   - list-all-projects
+  - add-new-project-via-form
   - show-latest-audit-per-project
   - display-compliance-score
   - render-mermaid-diagram
