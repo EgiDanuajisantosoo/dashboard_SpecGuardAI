@@ -1,4 +1,4 @@
-<x-ui::app-layout>
+<x-app-layout>
     <x-slot name="title">Live Audit Board - SpecGuard AI</x-slot>
 
     <!-- Top Navbar -->
@@ -7,7 +7,7 @@
             <div class="flex items-center gap-2">
                 <span class="text-gray-400 text-sm font-medium">SpecGuard</span>
                 <span class="text-gray-600">/</span>
-                <span class="text-white text-sm font-semibold">core-api</span>
+                <span class="text-white text-sm font-semibold">{{ $project->name }}</span>
             </div>
             <div class="h-4 w-px bg-[#2A2A2A]"></div>
             <div class="flex items-center gap-2">
@@ -47,7 +47,7 @@
                         <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04M12 3V10m0 0l-4-4m4 4l4-4m-4 17a9 9 0 110-18 9 9 0 010 18z"></path></svg>
                     </div>
                     <div class="flex items-end gap-3 mt-4">
-                        <span class="text-4xl font-bold text-white tracking-tight">84%</span>
+                        <span class="text-4xl font-bold text-white tracking-tight">{{ $latestAudit->score ?? 0 }}%</span>
                         <div class="flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded border border-emerald-500/20 mb-1">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
                             2.4%
@@ -66,7 +66,7 @@
                         <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                     </div>
                     <div class="flex items-end gap-3 mt-4">
-                        <span class="text-4xl font-bold text-red-400 tracking-tight">2</span>
+                        <span class="text-4xl font-bold text-red-400 tracking-tight">{{ isset($latestAudit->result_json['missing_requirements']) ? count($latestAudit->result_json['missing_requirements']) : 0 }}</span>
                     </div>
                 </div>
 
@@ -80,7 +80,7 @@
                         <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
                     <div class="flex items-end gap-3 mt-4">
-                        <span class="text-4xl font-bold text-white tracking-tight">14</span>
+                        <span class="text-4xl font-bold text-white tracking-tight">{{ $project->audits->count() }}</span>
                     </div>
                 </div>
 
@@ -115,58 +115,15 @@
                 </div>
 
                 <!-- Flowchart Visualization Area -->
-                <div class="relative h-[280px] bg-[#0A0A0A] rounded-lg border border-[#2A2A2A] flex items-center justify-center p-8 overflow-hidden">
-                    
-                    <!-- Connecting Lines (SVG) -->
-                    <svg class="absolute inset-0 w-full h-full pointer-events-none" style="z-index: 0;">
-                        <path d="M 250 140 C 350 140, 350 80, 450 80" fill="none" stroke="#333" stroke-width="2" />
-                        <path d="M 250 140 C 350 140, 350 200, 450 200" fill="none" stroke="#333" stroke-width="2" />
-                        <path d="M 600 80 C 700 80, 700 140, 800 140" fill="none" stroke="#333" stroke-width="2" />
-                        <path d="M 600 200 C 700 200, 700 140, 800 140" fill="none" stroke="#333" stroke-width="2" stroke-dasharray="4" />
-                    </svg>
+                <div class="relative h-[280px] bg-[#0A0A0A] rounded-lg border border-[#2A2A2A] flex items-center justify-center p-8 overflow-auto">
+                    <div class="mermaid">
+                        graph TD
+                        A[Authentication]
+                        B[Validation]
+                        C[Logging]
 
-                    <div class="flex items-center justify-between w-full max-w-4xl relative z-10">
-                        
-                        <!-- Origin Node -->
-                        <div class="flex flex-col items-center">
-                            <div class="bg-[#1E1E1E] border border-gray-600 rounded-md px-4 py-2 flex flex-col items-center shadow-lg">
-                                <span class="text-[10px] text-gray-500 font-mono mb-1 uppercase">Source</span>
-                                <span class="text-sm font-medium text-gray-300">User Request</span>
-                            </div>
-                        </div>
-
-                        <!-- Middle Nodes -->
-                        <div class="flex flex-col gap-16">
-                            <!-- Green Node -->
-                            <div class="bg-[#0f1f15] border border-emerald-500/50 rounded-md px-4 py-2 flex flex-col items-center shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-                                <div class="flex items-center gap-1.5 mb-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                    <span class="text-[10px] text-emerald-500 font-mono uppercase">Req: Auth</span>
-                                </div>
-                                <span class="text-sm font-medium text-emerald-400">Validation Middleware</span>
-                            </div>
-
-                            <!-- Red Node -->
-                            <div class="bg-[#2a1215] border border-red-500/50 rounded-md px-4 py-2 flex flex-col items-center shadow-[0_0_15px_rgba(239,68,68,0.1)] ring-1 ring-red-500/20">
-                                <div class="flex items-center gap-1.5 mb-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                                    <span class="text-[10px] text-red-500 font-mono uppercase">Req: Logging</span>
-                                </div>
-                                <span class="text-sm font-medium text-red-400">Activity Log Hook</span>
-                            </div>
-                        </div>
-
-                        <!-- Destination Node -->
-                        <div class="flex flex-col items-center">
-                            <div class="bg-[#1f1a0f] border border-yellow-500/50 rounded-md px-4 py-2 flex flex-col items-center shadow-[0_0_15px_rgba(234,179,8,0.1)]">
-                                <div class="flex items-center gap-1.5 mb-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
-                                    <span class="text-[10px] text-yellow-500 font-mono uppercase">Status: Partial</span>
-                                </div>
-                                <span class="text-sm font-medium text-yellow-400">Login Process</span>
-                            </div>
-                        </div>
-
+                        A --> B
+                        B --> C
                     </div>
                 </div>
             </div>
@@ -184,34 +141,29 @@
                         <button class="text-[11px] font-bold tracking-wider text-gray-500 uppercase hover:text-gray-300 transition-colors">View All</button>
                     </div>
                     <div class="p-5 flex flex-col gap-4">
-                        <!-- Commit 1 -->
+                        @forelse($project->audits->sortByDesc('created_at')->take(5) as $audit)
                         <div class="flex gap-3">
                             <div class="w-8 h-8 rounded-full bg-[#252525] border border-[#333] flex items-center justify-center flex-shrink-0">
+                                @if($audit->status === 'complete')
                                 <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex justify-between items-baseline mb-0.5">
-                                    <h4 class="text-sm font-medium text-gray-200 truncate">Merged PR #421</h4>
-                                    <span class="text-xs text-gray-500 flex-shrink-0">2m ago</span>
-                                </div>
-                                <p class="text-xs text-gray-400 mb-2">Implemented JWT validation middleware.</p>
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono border border-emerald-900/50 bg-emerald-900/20 text-emerald-400">Auth_Req: PASS</span>
-                            </div>
-                        </div>
-                        <!-- Commit 2 -->
-                        <div class="flex gap-3">
-                            <div class="w-8 h-8 rounded-full bg-[#252525] border border-[#333] flex items-center justify-center flex-shrink-0">
+                                @elseif($audit->status === 'partial')
+                                <svg class="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 17h.01"></path></svg>
+                                @else
                                 <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                @endif
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex justify-between items-baseline mb-0.5">
-                                    <h4 class="text-sm font-medium text-gray-200 truncate">Commit a8f9b2c</h4>
-                                    <span class="text-xs text-gray-500 flex-shrink-0">12m ago</span>
+                                    <h4 class="text-sm font-medium text-gray-200 truncate">Commit {{ substr($audit->commit_hash, 0, 8) }}</h4>
+                                    <span class="text-xs text-gray-500 flex-shrink-0">{{ $audit->created_at->diffForHumans() }}</span>
                                 </div>
-                                <p class="text-xs text-gray-400 mb-2">Update database schema for user profiles.</p>
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono border border-red-900/50 bg-red-900/20 text-red-400">Log_Req: FAIL</span>
+                                <p class="text-xs text-gray-400 mb-2">Score: {{ $audit->score }}%</p>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono border {{ $audit->status === 'complete' ? 'border-emerald-900/50 bg-emerald-900/20 text-emerald-400' : ($audit->status === 'partial' ? 'border-yellow-900/50 bg-yellow-900/20 text-yellow-400' : 'border-red-900/50 bg-red-900/20 text-red-400') }}">Status: {{ strtoupper($audit->status) }}</span>
                             </div>
                         </div>
+                        @empty
+                        <div class="text-sm text-gray-500 text-center py-4">No recent commits.</div>
+                        @endforelse
                     </div>
                 </div>
 
@@ -246,4 +198,33 @@
             </div>
         </div>
     </div>
-</x-ui::app-layout>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+    @if($latestAudit && isset($latestAudit->result_json['node_status']))
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                const nodeStatus = @json($latestAudit->result_json['node_status']);
+                const svg = document.querySelector('.mermaid svg');
+                if (!svg) return;
+
+                for (const [node, status] of Object.entries(nodeStatus)) {
+                    // A simple workaround is finding nodes containing the text.
+                    const allNodes = svg.querySelectorAll('.node');
+                    allNodes.forEach(el => {
+                        const text = el.textContent.trim().toLowerCase();
+                        if (text === node.toLowerCase()) {
+                            el.style.fill = status ? '#10b981' : '#ef4444'; // Green or Red
+                            const rect = el.querySelector('rect, circle, polygon');
+                            if(rect) rect.style.fill = status ? '#10b981' : '#ef4444';
+                        }
+                    });
+                }
+            }, 500);
+        });
+    </script>
+    @endif
+</x-app-layout>

@@ -1,24 +1,18 @@
-<x-ui::app-layout>
-    <x-slot name="title">SpecGuard AI - Dashboard</x-slot>
+<x-app-layout>
+    <x-slot name="title">PRD Input - SpecGuard AI</x-slot>
 
-    <!-- Scripts and Styles for Mermaid -->
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-    <script>
-        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
-    </script>
-    <style>
-        .mermaid svg { max-height: 400px; }
-        .node-complete { fill: rgba(16, 185, 129, 0.2) !important; stroke: rgba(16, 185, 129, 0.5) !important; }
-        .node-partial { fill: rgba(245, 158, 11, 0.2) !important; stroke: rgba(245, 158, 11, 0.5) !important; }
-        .node-missing { fill: rgba(239, 68, 68, 0.2) !important; stroke: rgba(239, 68, 68, 0.5) !important; }
-        .node-empty { fill: rgba(55, 65, 81, 0.5) !important; stroke: rgba(75, 85, 99, 0.5) !important; }
-    </style>
-
-    <!-- Top Navbar / Header -->
-    <header class="h-16 border-b border-[#2A2A2A] flex items-center justify-between px-8 flex-shrink-0 bg-[#121212]/80 backdrop-blur-md sticky top-0 z-10">
+    <!-- Top Navbar -->
+    <header class="h-16 border-b border-[#2A2A2A] flex items-center justify-between px-8 flex-shrink-0">
         <div class="flex items-center gap-6 h-full">
             <div class="flex items-center gap-2">
-                <span class="text-white text-lg font-semibold tracking-tight">Project Overview</span>
+                <span class="text-gray-400 text-sm font-medium">SpecGuard</span>
+                <span class="text-gray-600">/</span>
+                <span class="text-white text-sm font-semibold">core-api</span>
+            </div>
+            <div class="h-4 w-px bg-[#2A2A2A]"></div>
+            <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-gray-500"></span>
+                <span class="text-xs text-gray-500 font-medium tracking-wide uppercase">Status: Draft</span>
             </div>
         </div>
         <div class="flex items-center gap-4">
@@ -30,175 +24,149 @@
     </header>
 
     <!-- Main Workspace -->
-    <div class="flex-1 overflow-auto p-8 relative z-0">
-        <div class="max-w-7xl mx-auto flex flex-col gap-6">
+    <div class="flex-1 overflow-auto p-8">
+        <div class="max-w-6xl mx-auto">
+            <!-- Page Header -->
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold text-white mb-2">Document Input</h2>
+                <p class="text-gray-400 text-sm">Provide product requirements to initiate automated specification drafting.</p>
+            </div>
 
-            @if($projects->isEmpty())
-                <div class="bg-[#161616] border border-[#2A2A2A] rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-sm">
-                    <div class="w-16 h-16 bg-[#252525] rounded-full flex items-center justify-center mb-4 border border-[#333]">
-                        <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            <!-- Content Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Left Column: Editor -->
+                <div class="col-span-2 flex flex-col h-[600px] border border-[#2A2A2A] rounded-lg bg-[#161616] overflow-hidden">
+                    
+                    <!-- Editor Tabs -->
+                    <div class="flex items-center justify-between px-4 border-b border-[#2A2A2A] h-11 bg-[#121212]">
+                        <div class="flex items-center gap-6 h-full">
+                            <button id="tab-raw-text" onclick="switchTab('raw-text')" class="text-gray-300 text-sm font-medium border-b-2 border-gray-400 h-full pt-[2px] transition-colors">Raw Text</button>
+                            <button id="tab-file-upload" onclick="switchTab('file-upload')" class="text-gray-500 hover:text-gray-300 text-sm font-medium border-b-2 border-transparent h-full pt-[2px] transition-colors">File Upload</button>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-gray-500">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                            <span class="text-[10px] font-bold tracking-wider">MD SUPPORTED</span>
+                        </div>
                     </div>
-                    <h2 class="text-lg font-semibold text-white mb-2">No projects found</h2>
-                    <p class="text-sm text-gray-400 max-w-md">Get started by creating a new project to monitor and audit your specifications automatically.</p>
-                </div>
-            @else
-                <div class="grid grid-cols-1 gap-6">
-                    @foreach($projects as $project)
-                        <div class="bg-[#161616] border border-[#2A2A2A] rounded-xl flex flex-col overflow-hidden shadow-sm relative">
-                            
-                            <!-- Card Header -->
-                            <div class="px-6 py-5 border-b border-[#2A2A2A] bg-[#121212] flex justify-between items-center">
-                                <div>
-                                    <h2 class="text-xl font-bold text-white flex items-center gap-3">
-                                        <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
-                                        {{ $project->name }}
-                                    </h2>
-                                    <p class="text-xs text-gray-400 mt-1.5 font-mono">{{ $project->repo_url }}</p>
+
+                    <!-- Content Panels -->
+                    <!-- Editor Textarea (Raw Text) -->
+                    <div id="content-raw-text" class="flex-1 p-4 bg-[#161616] flex flex-col">
+                        <textarea class="w-full flex-1 bg-transparent resize-none outline-none border-none text-gray-400 text-sm font-['JetBrains_Mono',_monospace] leading-relaxed" spellcheck="false" placeholder="# Overview&#10;Describe the core objective of this feature...&#10;&#10;## Goals & Non-Goals&#10;- Goal 1...&#10;&#10;## User Stories&#10;- As a [role], I want to [action] so that [benefit]..."></textarea>
+                    </div>
+                    
+                    <!-- File Upload UI -->
+                    <div id="content-file-upload" class="hidden flex-1 p-8 bg-[#161616] flex items-center justify-center">
+                        <label for="file-upload-input" class="w-full h-full border-2 border-dashed border-[#333] hover:border-gray-500 hover:bg-[#1C1C1C] transition-all rounded-xl flex flex-col items-center justify-center bg-[#1A1A1A] cursor-pointer group">
+                            <div class="w-12 h-12 bg-[#252525] group-hover:bg-[#333] transition-colors rounded-full flex items-center justify-center mb-4">
+                                <svg class="w-6 h-6 text-gray-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                            </div>
+                            <p class="text-sm text-gray-300 font-medium mb-1">Click to upload or drag and drop</p>
+                            <p class="text-xs text-gray-500">PDF documents only (MAX. 10MB)</p>
+                            <input type="file" accept=".pdf" class="hidden" id="file-upload-input">
+                        </label>
+                    </div>
+
+                    <!-- Editor Footer / Actions -->
+                    <div class="p-3 border-t border-[#2A2A2A] bg-[#121212] flex items-center justify-between">
+                        <div class="flex flex-col gap-1">
+                            <span class="text-[10px] text-gray-500 font-bold tracking-wider uppercase">Template</span>
+                            <div class="relative">
+                                <select class="appearance-none w-32 bg-[#252525] border border-[#333] text-gray-300 text-sm rounded px-3 py-1.5 focus:outline-none focus:border-gray-500 cursor-pointer">
+                                    <option>Standard</option>
+                                    <option>RFC</option>
+                                    <option>API Spec</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </div>
-                                <a href="{{ route('project.show', $project) }}" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-500 transition-colors shadow-[0_0_15px_rgba(79,70,229,0.2)] flex items-center gap-2">
-                                    View Details
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                                </a>
-                            </div>
-
-                            <!-- Card Body -->
-                            <div class="p-6">
-                                @if($project->audits->isNotEmpty())
-                                    @php
-                                        $latestAudit = $project->audits->first();
-                                    @endphp
-                                    
-                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                                        
-                                        <!-- Health Score -->
-                                        <div class="bg-[#121212] border border-[#2A2A2A] rounded-lg p-4 relative overflow-hidden">
-                                            <div class="absolute top-0 right-0 w-24 h-24 rounded-full blur-xl pointer-events-none -translate-y-1/2 translate-x-1/2 {{ $latestAudit->score >= 80 ? 'bg-emerald-500/10' : ($latestAudit->score >= 50 ? 'bg-yellow-500/10' : 'bg-red-500/10') }}"></div>
-                                            <div class="flex justify-between items-center mb-3">
-                                                <span class="text-[10px] font-bold tracking-wider text-gray-500 uppercase">Compliance Score</span>
-                                                <span class="text-2xl font-bold {{ $latestAudit->score >= 80 ? 'text-emerald-400' : ($latestAudit->score >= 50 ? 'text-yellow-400' : 'text-red-400') }}">{{ $latestAudit->score }}%</span>
-                                            </div>
-                                            <div class="w-full bg-[#252525] rounded-full h-1.5 overflow-hidden">
-                                                <div class="{{ $latestAudit->score >= 80 ? 'bg-emerald-500' : ($latestAudit->score >= 50 ? 'bg-yellow-500' : 'bg-red-500') }} h-full rounded-full shadow-[0_0_10px_currentColor]"
-                                                     style="width: {{ $latestAudit->score }}%"></div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Status & Commit -->
-                                        <div class="bg-[#121212] border border-[#2A2A2A] rounded-lg p-4 flex flex-col justify-center gap-3">
-                                            <div class="flex items-center justify-between">
-                                                <span class="text-xs text-gray-500 font-medium">Status:</span>
-                                                <span class="px-2.5 py-1 rounded text-[10px] font-bold tracking-wider uppercase border {{ $latestAudit->status === 'complete' ? 'bg-emerald-900/30 text-emerald-400 border-emerald-500/30' : ($latestAudit->status === 'partial' ? 'bg-yellow-900/30 text-yellow-400 border-yellow-500/30' : 'bg-red-900/30 text-red-400 border-red-500/30') }}">
-                                                    {{ $latestAudit->status }}
-                                                </span>
-                                            </div>
-                                            <div class="flex items-center justify-between">
-                                                <span class="text-xs text-gray-500 font-medium">Commit:</span>
-                                                <div class="flex items-center gap-1.5 px-2 py-1 rounded bg-[#1E1E1E] border border-[#333] text-gray-300">
-                                                    <svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002-2h8a2 2 0 002-2v-2"></path></svg>
-                                                    <span class="font-mono text-xs">{{ substr($latestAudit->commit_hash, 0, 8) }}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                        <!-- Mermaid Visualization -->
-                                        <div>
-                                            <h4 class="text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
-                                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>
-                                                Workflow Map
-                                            </h4>
-                                            <div class="p-4 bg-[#0A0A0A] border border-[#2A2A2A] rounded-lg overflow-x-auto flex items-center justify-center min-h-[200px]">
-                                                <div class="mermaid text-sm" id="mermaid-{{ $project->id }}">
-                                                    graph TD
-                                                    A[Authentication]
-                                                    B[Validation]
-                                                    C[Logging]
-
-                                                    A --> B
-                                                    B --> C
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Details & Missing Reqs -->
-                                        @if($latestAudit->result_json)
-                                            <div>
-                                                <h4 class="text-sm font-semibold text-gray-200 mb-3 flex items-center gap-2">
-                                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
-                                                    Audit Details
-                                                </h4>
-                                                @if(isset($latestAudit->result_json['missing_requirements']) && count($latestAudit->result_json['missing_requirements']) > 0)
-                                                    <div class="bg-red-900/10 border border-red-900/30 p-4 rounded-lg">
-                                                        <div class="flex items-center gap-2 mb-3">
-                                                            <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                                                            <p class="text-red-400 font-semibold text-xs tracking-wide uppercase">Missing Requirements:</p>
-                                                        </div>
-                                                        <ul class="space-y-2">
-                                                            @foreach($latestAudit->result_json['missing_requirements'] as $req)
-                                                                <li class="flex items-start gap-2 text-sm text-red-300/80">
-                                                                    <span class="mt-1.5 w-1 h-1 rounded-full bg-red-500 flex-shrink-0"></span>
-                                                                    {{ $req }}
-                                                                </li>
-                                                            @endforeach
-                                                        </ul>
-                                                    </div>
-                                                @else
-                                                    <div class="bg-emerald-900/10 border border-emerald-900/30 p-4 rounded-lg flex items-center gap-3">
-                                                        <div class="w-8 h-8 rounded-full bg-emerald-900/50 flex items-center justify-center flex-shrink-0">
-                                                            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                                        </div>
-                                                        <p class="text-sm text-emerald-400">All specification requirements have been met in this commit.</p>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        @endif
-                                    </div>
-                                @else
-                                    <div class="py-12 flex flex-col items-center justify-center text-center">
-                                        <div class="w-12 h-12 bg-[#1A1A1A] rounded-full border border-[#333] flex items-center justify-center mb-3">
-                                            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                                        </div>
-                                        <p class="text-sm text-gray-400 font-medium">No audits recorded yet.</p>
-                                        <p class="text-xs text-gray-500 mt-1">Push code to the GitHub repository to trigger the first compliance audit.</p>
-                                    </div>
-                                @endif
-                            </div>
-
-                            <!-- Card Footer -->
-                            <div class="px-6 py-3 bg-[#121212] border-t border-[#2A2A2A] text-xs text-gray-500 flex items-center gap-2">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                Last updated: <span class="text-gray-400">{{ $project->audits->first()?->created_at?->diffForHumans() ?? 'Never' }}</span>
                             </div>
                         </div>
-                    @endforeach
+                        <a href="/openspec" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-5 py-2 rounded-md shadow-sm transition-all focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-[#121212] inline-block">
+                            Generate OpenSpec
+                        </a>
+                    </div>
                 </div>
-            @endif
 
+                <!-- Right Column: Meta & History -->
+                <div class="col-span-1 flex flex-col gap-6">
+                    
+                    <!-- Meta Info -->
+                    <div class="bg-[#161616] border border-[#2A2A2A] rounded-lg p-5">
+                        <h3 class="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Document Properties
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1.5 block">Project Area</label>
+                                <input type="text" value="Authentication Service" class="w-full bg-[#121212] border border-[#333] text-gray-300 text-sm rounded-md px-3 py-2 focus:outline-none focus:border-indigo-500 transition-colors">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1.5 block">Target Repository</label>
+                                <select class="w-full bg-[#121212] border border-[#333] text-gray-300 text-sm rounded-md px-3 py-2 focus:outline-none focus:border-indigo-500 transition-colors appearance-none">
+                                    <option>specguard-demo/core-api</option>
+                                    <option>specguard-demo/frontend</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- History / Recent -->
+                    <div class="bg-[#161616] border border-[#2A2A2A] rounded-lg p-5 flex-1">
+                        <h3 class="text-sm font-semibold text-white mb-4">Recent Documents</h3>
+                        <div class="space-y-3">
+                            @forelse($projects as $proj)
+                                <a href="{{ route('project.show', $proj->id) }}" class="block p-3 rounded border border-[#333] hover:border-gray-500 hover:bg-[#1C1C1C] transition-all group">
+                                    <div class="flex items-start justify-between mb-1">
+                                        <h4 class="text-sm text-gray-300 font-medium group-hover:text-white">{{ $proj->name }}</h4>
+                                        <span class="text-[10px] text-gray-500">{{ $proj->created_at->diffForHumans(null, true, true) }} ago</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 mt-2">
+                                        @php
+                                            $latestProjAudit = $proj->audits->sortByDesc('created_at')->first();
+                                            $isComplete = $latestProjAudit && $latestProjAudit->status === 'complete';
+                                            $isPartial = $latestProjAudit && $latestProjAudit->status === 'partial';
+                                        @endphp
+                                        <span class="w-1.5 h-1.5 rounded-full {{ $isComplete ? 'bg-emerald-500' : ($isPartial ? 'bg-yellow-500' : 'bg-red-500') }}"></span>
+                                        <span class="text-xs text-gray-500">{{ $latestProjAudit ? 'Score: ' . $latestProjAudit->score . '%' : 'No Audit Yet' }}</span>
+                                    </div>
+                                </a>
+                            @empty
+                                <div class="text-sm text-gray-500 text-center py-4">No projects found.</div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Simple JS for Tab Switching -->
     <script>
-        function updateMermaidColors(projectId, nodeStatus) {
-            const element = document.getElementById('mermaid-' + projectId);
-            if (!element) return;
-
-            setTimeout(() => {
-                const svg = element.querySelector('svg');
-                if (!svg) return;
-
-                for (const [node, status] of Object.entries(nodeStatus)) {
-                    const nodeElements = svg.querySelectorAll(`[class*="${node}"]`);
-                    nodeElements.forEach(el => {
-                        if (status) {
-                            el.classList.add('node-complete');
-                        } else {
-                            el.classList.add('node-missing');
-                        }
-                    });
-                }
-            }, 100);
+        function switchTab(tabId) {
+            // Hide all contents
+            document.getElementById('content-raw-text').classList.add('hidden');
+            document.getElementById('content-raw-text').classList.remove('flex');
+            document.getElementById('content-file-upload').classList.add('hidden');
+            document.getElementById('content-file-upload').classList.remove('flex');
+            
+            // Reset all tabs
+            document.getElementById('tab-raw-text').className = "text-gray-500 hover:text-gray-300 text-sm font-medium border-b-2 border-transparent h-full pt-[2px] transition-colors";
+            document.getElementById('tab-file-upload').className = "text-gray-500 hover:text-gray-300 text-sm font-medium border-b-2 border-transparent h-full pt-[2px] transition-colors";
+            
+            // Show selected content
+            if (tabId === 'raw-text') {
+                document.getElementById('content-raw-text').classList.remove('hidden');
+                document.getElementById('content-raw-text').classList.add('flex');
+                document.getElementById('tab-raw-text').className = "text-gray-300 text-sm font-medium border-b-2 border-gray-400 h-full pt-[2px] transition-colors";
+            } else if (tabId === 'file-upload') {
+                document.getElementById('content-file-upload').classList.remove('hidden');
+                document.getElementById('content-file-upload').classList.add('flex');
+                document.getElementById('tab-file-upload').className = "text-gray-300 text-sm font-medium border-b-2 border-gray-400 h-full pt-[2px] transition-colors";
+            }
         }
     </script>
-</x-ui::app-layout>
+</x-app-layout>

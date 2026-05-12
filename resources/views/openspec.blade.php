@@ -1,4 +1,4 @@
-<x-ui::app-layout>
+<x-app-layout>
     <x-slot name="title">OpenSpec Review - SpecGuard AI</x-slot>
 
     <!-- Top Navbar -->
@@ -187,4 +187,4 @@
 
         </div>
     </div>
-</x-ui::app-layout>
+</x-app-layout>

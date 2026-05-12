@@ -23,7 +23,7 @@ class DashboardController extends Controller
 
         $latestAudit = $project->audits()->latest('created_at')->first();
 
-        return view('project.show', [
+        return view('compliance', [
             'project' => $project,
             'latestAudit' => $latestAudit,
         ]);
