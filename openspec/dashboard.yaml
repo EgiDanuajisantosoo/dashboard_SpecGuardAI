@@ -1,0 +1,80 @@
+---
+feature: Dashboard - Project Overview
+
+description: |
+  Menampilkan daftar semua project dengan status compliance score
+  dan visualisasi Mermaid diagram yang dinamis.
+
+endpoint:
+  method: GET
+  path: /dashboard
+
+requirements:
+  - list-all-projects
+  - show-latest-audit-per-project
+  - display-compliance-score
+  - render-mermaid-diagram
+  - show-missing-requirements
+  - display-audit-history
+
+ui_elements:
+  - project_name
+  - repo_url
+  - compliance_score_percentage
+  - status_badge
+  - mermaid_diagram
+  - missing_requirements_list
+  - last_updated_timestamp
+  - view_details_button
+
+mermaid_visualization:
+  nodes:
+    - authentication
+    - validation
+    - logging
+  flow:
+    - authentication --> validation
+    - validation --> logging
+  colors:
+    complete: green
+    partial: yellow
+    missing: red
+    empty: gray
+
+response:
+  body:
+    projects:
+      - id: integer
+        name: string
+        repo_url: string
+        latest_audit:
+          score: integer (0-100)
+          status: enum (pending, partial, complete, failed)
+          result_json: object
+          missing_requirements: array
+          commit_hash: string
+          created_at: datetime
+
+validation:
+  - must_return_all_active_projects
+  - compliance_score_must_be_0_to_100
+  - status_must_match_score_range
+  - missing_requirements_must_be_array
+
+logging:
+  - log_dashboard_accessed
+  - log_projects_loaded_count
+
+features:
+  - real-time_score_display
+  - dynamic_mermaid_coloring
+  - audit_history_summary
+  - clickable_project_links
+
+testing:
+  - test_empty_projects_list
+  - test_single_project_display
+  - test_multiple_projects_display
+  - test_mermaid_rendering
+  - test_score_calculation_accuracy
+  - test_missing_requirements_display
