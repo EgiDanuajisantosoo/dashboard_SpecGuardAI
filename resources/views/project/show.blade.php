@@ -144,5 +144,32 @@
             </div>
         </main>
     </div>
+
+    @if($latestAudit && isset($latestAudit->result_json['node_status']))
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                const nodeStatus = @json($latestAudit->result_json['node_status']);
+                const svg = document.querySelector('.mermaid svg');
+                if (!svg) return;
+
+                for (const [node, status] of Object.entries(nodeStatus)) {
+                    const nodeElements = svg.querySelectorAll(`[class*="node-${node}"]`);
+                    // Note: In real Mermaid, nodes have ID or text, finding them by class might require custom classDefs.
+                    // A simple workaround is finding nodes containing the text.
+                    const allNodes = svg.querySelectorAll('.node');
+                    allNodes.forEach(el => {
+                        const text = el.textContent.trim().toLowerCase();
+                        if (text === node.toLowerCase()) {
+                            el.style.fill = status ? '#10b981' : '#ef4444'; // Green or Red
+                            const rect = el.querySelector('rect, circle, polygon');
+                            if(rect) rect.style.fill = status ? '#10b981' : '#ef4444';
+                        }
+                    });
+                }
+            }, 500);
+        });
+    </script>
+    @endif
 </body>
 </html>

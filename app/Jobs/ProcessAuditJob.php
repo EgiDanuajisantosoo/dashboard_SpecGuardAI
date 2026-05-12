@@ -12,6 +12,9 @@ class ProcessAuditJob implements ShouldQueue
 {
     use Queueable;
 
+    public $timeout = 300;
+    public $tries = 3;
+
     public function __construct(
         private int $projectId,
         private string $commitHash,
@@ -52,7 +55,7 @@ class ProcessAuditJob implements ShouldQueue
     {
         $aiServiceUrl = env('AI_SERVICE_URL', 'http://localhost:8000');
 
-        $response = Http::post("{$aiServiceUrl}/api/audit", [
+        $response = Http::timeout(60)->post("{$aiServiceUrl}/api/audit", [
             'spec' => $project->spec_content,
             'diff' => $diff,
         ]);
