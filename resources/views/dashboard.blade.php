@@ -30,10 +30,27 @@
             <div class="mb-8">
                 <h2 class="text-2xl font-bold text-white mb-2">Document Input</h2>
                 <p class="text-gray-400 text-sm">Provide product requirements to initiate automated specification drafting.</p>
+                
+                @if(session('error'))
+                    <div class="mt-4 p-4 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">
+                        {{ session('error') }}
+                    </div>
+                @endif
+                @if($errors->any())
+                    <div class="mt-4 p-4 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">
+                        <ul class="list-disc list-inside">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
             </div>
 
             <!-- Content Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <form method="POST" action="{{ route('project.generate') }}">
+                @csrf
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 <!-- Left Column: Editor -->
                 <div class="col-span-2 flex flex-col h-[600px] border border-[#2A2A2A] rounded-lg bg-[#161616] overflow-hidden">
@@ -53,7 +70,7 @@
                     <!-- Content Panels -->
                     <!-- Editor Textarea (Raw Text) -->
                     <div id="content-raw-text" class="flex-1 p-4 bg-[#161616] flex flex-col">
-                        <textarea class="w-full flex-1 bg-transparent resize-none outline-none border-none text-gray-400 text-sm font-['JetBrains_Mono',_monospace] leading-relaxed" spellcheck="false" placeholder="# Overview&#10;Describe the core objective of this feature...&#10;&#10;## Goals & Non-Goals&#10;- Goal 1...&#10;&#10;## User Stories&#10;- As a [role], I want to [action] so that [benefit]..."></textarea>
+                        <textarea name="raw_text" class="w-full flex-1 bg-transparent resize-none outline-none border-none text-gray-400 text-sm font-['JetBrains_Mono',_monospace] leading-relaxed" spellcheck="false" placeholder="# Overview&#10;Describe the core objective of this feature...&#10;&#10;## Goals & Non-Goals&#10;- Goal 1...&#10;&#10;## User Stories&#10;- As a [role], I want to [action] so that [benefit]..."></textarea>
                     </div>
                     
                     <!-- File Upload UI -->
@@ -83,9 +100,9 @@
                                 </div>
                             </div>
                         </div>
-                        <a href="/openspec" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-5 py-2 rounded-md shadow-sm transition-all focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-[#121212] inline-block">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-5 py-2 rounded-md shadow-sm transition-all focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-[#121212] inline-block">
                             Generate OpenSpec
-                        </a>
+                        </button>
                     </div>
                 </div>
 
@@ -101,13 +118,13 @@
                         <div class="space-y-4">
                             <div>
                                 <label class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1.5 block">Project Area</label>
-                                <input type="text" value="Authentication Service" class="w-full bg-[#121212] border border-[#333] text-gray-300 text-sm rounded-md px-3 py-2 focus:outline-none focus:border-indigo-500 transition-colors">
+                                <input type="text" name="project_area" value="Authentication Service" class="w-full bg-[#121212] border border-[#333] text-gray-300 text-sm rounded-md px-3 py-2 focus:outline-none focus:border-indigo-500 transition-colors">
                             </div>
                             <div>
                                 <label class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1.5 block">Target Repository</label>
-                                <select class="w-full bg-[#121212] border border-[#333] text-gray-300 text-sm rounded-md px-3 py-2 focus:outline-none focus:border-indigo-500 transition-colors appearance-none">
-                                    <option>specguard-demo/core-api</option>
-                                    <option>specguard-demo/frontend</option>
+                                <select name="target_repo" class="w-full bg-[#121212] border border-[#333] text-gray-300 text-sm rounded-md px-3 py-2 focus:outline-none focus:border-indigo-500 transition-colors appearance-none">
+                                    <option value="specguard-demo/core-api">specguard-demo/core-api</option>
+                                    <option value="specguard-demo/frontend">specguard-demo/frontend</option>
                                 </select>
                             </div>
                         </div>
@@ -139,8 +156,8 @@
                         </div>
                     </div>
                 </div>
-
             </div>
+            </form>
         </div>
     </div>
 

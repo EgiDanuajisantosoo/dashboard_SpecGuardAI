@@ -10,6 +10,7 @@ class Project extends Model
     protected $fillable = [
         'name',
         'repo_url',
+        'prd_content',
         'spec_content',
     ];
 

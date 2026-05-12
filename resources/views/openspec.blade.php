@@ -7,7 +7,7 @@
             <div class="flex items-center gap-2">
                 <span class="text-gray-400 text-sm font-medium">SpecGuard</span>
                 <span class="text-gray-600">/</span>
-                <span class="text-white text-sm font-semibold">core-api</span>
+                <span class="text-white text-sm font-semibold">{{ $project ? $project->name : 'Project' }}</span>
             </div>
             <div class="h-4 w-px bg-[#2A2A2A]"></div>
             <div class="flex items-center gap-2">
@@ -37,7 +37,7 @@
                 <div>
                     <h2 class="text-2xl font-bold text-white mb-2 flex items-center gap-3">
                         <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        auth_service.yaml
+                        {{ $project ? $project->name . '.mermaid' : 'flowchart.mermaid' }}
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border border-[#333] bg-[#252525] text-gray-400">v1.2.4</span>
                     </h2>
                     <p class="text-gray-400 text-sm">Generated OpenSpec structure ready for review.</p>
@@ -57,7 +57,7 @@
             <!-- Main Editor Split -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                <!-- YAML Editor Side -->
+                <!-- mermaid Editor Side -->
                 <div class="col-span-2 bg-[#161616] border border-[#2A2A2A] rounded-xl flex flex-col overflow-hidden shadow-sm">
                     <div class="h-12 border-b border-[#2A2A2A] bg-[#121212] px-4 flex items-center justify-between">
                         <div class="flex items-center gap-3">
@@ -66,10 +66,10 @@
                                 <div class="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/50"></div>
                                 <div class="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/50"></div>
                             </div>
-                            <span class="text-xs font-mono text-gray-400">auth_service.yaml</span>
+                            <span class="text-xs font-mono text-gray-400">{{ $project ? $project->name . '.mermaid' : 'flowchart.mermaid' }}</span>
                         </div>
                         <div class="flex items-center gap-2 text-xs font-mono text-gray-500">
-                            <span>YAML</span>
+                            <span>mermaid</span>
                             <span>UTF-8</span>
                         </div>
                     </div>
@@ -77,28 +77,8 @@
                     <div class="flex-1 p-4 relative font-['JetBrains_Mono',_monospace] text-sm overflow-auto h-[600px] leading-relaxed">
                         <!-- Line Numbers & Code -->
                         <div class="flex">
-                            <div class="text-gray-600 text-right pr-4 select-none flex flex-col min-w-[2.5rem]">
-                                <div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div>6</div><div>7</div><div>8</div><div>9</div><div>10</div>
-                                <div>11</div><div>12</div><div>13</div><div>14</div><div>15</div><div>16</div><div>17</div><div>18</div><div>19</div><div>20</div>
-                                <div>21</div><div>22</div><div>23</div><div>24</div><div>25</div>
-                            </div>
-                            <div class="text-gray-300 whitespace-pre flex flex-col">
-<div><span class="text-pink-400">openapi:</span> <span class="text-green-400">3.0.0</span></div>
-<div><span class="text-pink-400">info:</span></div>
-<div>  <span class="text-blue-400">title:</span> <span class="text-yellow-400">Authentication Service API</span></div>
-<div>  <span class="text-blue-400">version:</span> <span class="text-green-400">1.0.0</span></div>
-<div><span class="text-pink-400">paths:</span></div>
-<div>  <span class="text-blue-400">/auth/login:</span></div>
-<div>    <span class="text-purple-400">post:</span></div>
-<div>      <span class="text-gray-500">summary:</span> User login</div>
-<div>      <span class="text-gray-500">requestBody:</span></div>
-<div>        <span class="text-gray-500">required:</span> <span class="text-orange-400">true</span></div>
-<div>        <span class="text-gray-500">content:</span></div>
-<div>          <span class="text-gray-500">application/json:</span></div>
-<div>            <span class="text-gray-500">schema:</span></div>
-<div>              <span class="text-gray-500">$ref:</span> <span class="text-yellow-400">'#/components/schemas/LoginRequest'</span></div>
-<div>      <span class="text-gray-500">responses:</span></div>
-<div>        <span class="text-yellow-400">'200':</span></div>
+                            <div class="text-gray-300 whitespace-pre flex flex-col font-mono text-sm">
+                                {{ $project ? $project->spec_content : 'No content generated.' }}
                             </div>
                         </div>
                     </div>
@@ -154,31 +134,14 @@
                                 Flow Preview
                             </span>
                         </div>
-                        <div class="p-4 flex-1 flex flex-col items-center justify-center bg-[#0A0A0A]">
-                            <!-- Neutral Gray Mermaid Flow Mockup -->
-                            <div class="flex flex-col items-center gap-4">
-                                <div class="px-3 py-1.5 border border-gray-600 bg-[#1E1E1E] rounded text-[10px] text-gray-400 font-mono text-center">
-                                    User Request
+                        <div class="p-4 flex-1 flex flex-col items-center justify-center bg-[#0A0A0A] overflow-auto">
+                            @if($project && $project->spec_content)
+                                <div class="mermaid">
+                                    {!! $project->spec_content !!}
                                 </div>
-                                <div class="h-6 border-l border-gray-600"></div>
-                                <div class="px-3 py-1.5 border border-gray-600 bg-[#1E1E1E] rounded text-[10px] text-gray-400 font-mono text-center">
-                                    Auth Validation
-                                </div>
-                                <div class="h-6 border-l border-gray-600"></div>
-                                <div class="flex gap-4">
-                                    <div class="flex flex-col items-center gap-4">
-                                        <div class="px-3 py-1.5 border border-gray-600 bg-[#1E1E1E] rounded text-[10px] text-gray-400 font-mono text-center">
-                                            Login Process
-                                        </div>
-                                    </div>
-                                    <div class="flex flex-col items-center gap-4">
-                                        <div class="px-3 py-1.5 border border-gray-600 bg-[#1E1E1E] rounded text-[10px] text-gray-400 font-mono text-center">
-                                            Activity Log
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <p class="text-[10px] text-gray-600 mt-6 text-center italic">Waiting for audit to commence...</p>
+                            @else
+                                <p class="text-[10px] text-gray-600 mt-6 text-center italic">No flowchart available...</p>
+                            @endif
                         </div>
                     </div>
 
