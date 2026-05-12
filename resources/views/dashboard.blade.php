@@ -156,23 +156,55 @@
                 </div>
             </div>
             </form>
+
+            {{-- Flow Preview Panel — shows latest project's spec + live preview while typing --}}
+           {{--  <div class="mt-6 bg-[#161616] border border-[#2A2A2A] rounded-xl overflow-hidden shadow-sm">
+                <div class="h-12 border-b border-[#2A2A2A] px-5 flex items-center justify-between bg-[#121212]">
+                    <span class="text-sm font-medium text-white flex items-center gap-2">
+                        <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>
+                        Flow Preview
+                        <span id="preview-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-900/30 text-indigo-400 border border-indigo-800/40 hidden">Live</span>
+                    </span>
+                    <div class="flex items-center gap-2">
+                        @if(count($projects) > 0)
+                        <span class="text-xs text-gray-500">Latest: <span class="text-gray-300">{{ $projects->first()->name }}</span></span>
+                        @endif
+                        <span id="preview-status" class="text-[10px] text-gray-600"></span>
+                    </div>
+                </div>--}}
+
+                {{-- Diagram Container --}}
+               {{--  <div id="flow-preview-container" class="p-6 bg-[#0A0A0A] overflow-auto flex items-center justify-center" style="min-height: 300px;">
+                    @if($projects->isNotEmpty() && $projects->first()->spec_content)
+                        <div class="mermaid" style="font-size: 15px;">
+                            {!! $projects->first()->spec_content !!}
+                        </div>
+                    @else
+                        <div id="preview-placeholder" class="flex flex-col items-center gap-3 text-center">
+                            <svg class="w-10 h-10 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>
+                            <p class="text-sm text-gray-600">Flow preview will appear here after generating a spec.</p>
+                        </div>
+                    @endif
+                    <div id="live-preview-container" class="hidden w-full flex items-center justify-center">
+                        <div id="live-mermaid" class="mermaid" style="font-size: 14px;"></div>
+                    </div>
+                </div>
+            </div> --}}
+
         </div>
     </div>
 
-    <!-- Simple JS for Tab Switching -->
+    <!-- Tab Switching + Live Mermaid Preview Script -->
     <script>
         function switchTab(tabId) {
-            // Hide all contents
             document.getElementById('content-raw-text').classList.add('hidden');
             document.getElementById('content-raw-text').classList.remove('flex');
             document.getElementById('content-file-upload').classList.add('hidden');
             document.getElementById('content-file-upload').classList.remove('flex');
-            
-            // Reset all tabs
+
             document.getElementById('tab-raw-text').className = "text-gray-500 hover:text-gray-300 text-sm font-medium border-b-2 border-transparent h-full pt-[2px] transition-colors";
             document.getElementById('tab-file-upload').className = "text-gray-500 hover:text-gray-300 text-sm font-medium border-b-2 border-transparent h-full pt-[2px] transition-colors";
-            
-            // Show selected content
+
             if (tabId === 'raw-text') {
                 document.getElementById('content-raw-text').classList.remove('hidden');
                 document.getElementById('content-raw-text').classList.add('flex');
@@ -183,5 +215,58 @@
                 document.getElementById('tab-file-upload').className = "text-gray-300 text-sm font-medium border-b-2 border-gray-400 h-full pt-[2px] transition-colors";
             }
         }
+
+        // ── Live Mermaid Preview ────────────────────────────────────────────
+        // Detects graph/flowchart code in the PRD textarea and renders it
+        const textarea = document.querySelector('textarea[name="raw_text"]');
+        const liveContainer = document.getElementById('live-preview-container');
+        const liveMermaid   = document.getElementById('live-mermaid');
+        const statusEl      = document.getElementById('preview-status');
+        const badge         = document.getElementById('preview-badge');
+        let debounceTimer;
+
+        function extractMermaid(text) {
+            // Match ```mermaid ... ``` blocks
+            const fenced = text.match(/```mermaid\s*([\s\S]+?)```/i);
+            if (fenced) return fenced[1].trim();
+            // Match bare graph / flowchart blocks
+            const bare = text.match(/((?:graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|gantt|pie|erDiagram|journey)[\s\S]+)/i);
+            if (bare) return bare[1].trim();
+            return null;
+        }
+
+        async function renderLivePreview(mermaidCode) {
+            if (!mermaidCode || !liveMermaid) return;
+            try {
+                statusEl.textContent = 'Rendering…';
+                const id = 'live-graph-' + Date.now();
+                const { svg } = await mermaid.render(id, mermaidCode);
+                liveMermaid.innerHTML = svg;
+                liveContainer.classList.remove('hidden');
+                badge.classList.remove('hidden');
+                statusEl.textContent = '';
+            } catch (e) {
+                statusEl.textContent = 'Syntax error in diagram';
+                liveContainer.classList.add('hidden');
+            }
+        }
+
+        if (textarea) {
+            textarea.addEventListener('input', () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    const code = extractMermaid(textarea.value);
+                    if (code) {
+                        renderLivePreview(code);
+                    } else {
+                        liveContainer.classList.add('hidden');
+                        badge.classList.add('hidden');
+                        statusEl.textContent = '';
+                    }
+                }, 1500);
+            });
+        }
     </script>
+
 </x-app-layout>
+

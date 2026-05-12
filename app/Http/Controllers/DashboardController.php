@@ -86,46 +86,18 @@ class DashboardController extends Controller
 
         try {
             $response = \OpenAI\Laravel\Facades\OpenAI::chat()->create([
-                'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+                'model'    => env('OPENAI_MODEL', 'gpt-4o-mini'),
                 'messages' => [
-                    [
-                        'role' => 'system',
-                        'content' => 'You are an expert system architect. Convert PRD text into valid Mermaid.js flowchart code.
-
-                        STRICT RULES:
-                        1. Output ONLY raw Mermaid code. No markdown blocks (```).
-                        2. Use ONLY valid arrow syntax: A -->|label| B  (NOT A -->|label|> B)
-                        3. Arrow labels use single pipe on each side: -->|text| NOT -->|text|>
-                        4. Use graph TD or graph LR as the first line.
-                        5. Keep it simple — max 15 nodes. Simplify complex PRDs.
-                        6. Ensure all subgraphs are properly closed with "end".
-
-                        VALID EXAMPLE:
-                        graph LR
-                            A[Start] -->|click| B{Check}
-                            B -->|yes| C[Success]
-                            B -->|no| A',
-                    ],
-                    [
-                        'role' => 'user',
-                        'content' => $request->raw_text,
-                    ],
+                    ['role' => 'system', 'content' => $this->getMermaidSystemPrompt()],
+                    ['role' => 'user',   'content' => $request->raw_text],
                 ],
                 'max_tokens' => 2500,
             ]);
 
             $mermaidCode = $response->choices[0]->message->content;
 
-            // Clean up markdown blocks
-            $mermaidCode = preg_replace('/^```(?:mermaid)?\n?/m', '', $mermaidCode);
-            $mermaidCode = preg_replace('/```$/m', '', $mermaidCode);
-            $mermaidCode = trim($mermaidCode);
-
-            // Auto-fix common AI mistakes in Mermaid syntax
-            // Fix invalid arrow: -->|text|> → -->|text|
-            $mermaidCode = preg_replace('/\|([^|\n]{0,80})\|>/', '|$1|', $mermaidCode);
-            // Fix style lines that use = instead of : (common mistake)
-            $mermaidCode = preg_replace('/style (\w+) fill=/', 'style $1 fill:', $mermaidCode);
+            // Sanitize the Mermaid code before saving
+            $mermaidCode = $this->sanitizeMermaid($mermaidCode);
 
             // Extract key requirements from PRD in background (non-blocking)
             $requirements = $this->extractRequirements($request->raw_text);
@@ -142,6 +114,144 @@ class DashboardController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to generate OpenSpec: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Sanitize raw Mermaid output from AI to fix common syntax errors.
+     * Handles: orphan `end`, & chars, duplicate arrows, invalid arrow syntax, style errors.
+     */
+    private function sanitizeMermaid(string $raw): string
+    {
+        // 1. Strip markdown fences
+        $code = preg_replace('/^```(?:mermaid)?\s*/im', '', $raw);
+        $code = preg_replace('/^```\s*$/m', '', $code);
+        $code = trim($code);
+
+        // 2. Fix invalid pipe-arrow: -->|text|> → -->|text|
+        $code = preg_replace('/\|([^|\n]{0,80})\|>/', '|$1|', $code);
+
+        // 3. Replace & with "and" inside node labels (causes Mermaid parse error)
+        //    Only inside brackets/labels, not in arrows
+        $code = preg_replace_callback(
+            '/([\[\{\(][^\/\]\}\)]*)[&]([^\]\}\)]*[\]\}\)])/u',
+            fn($m) => str_replace('&', ' and ', $m[0]),
+            $code
+        );
+
+        // 4. Remove orphan `end` lines (not preceded by subgraph definition)
+        $lines      = explode("\n", $code);
+        $inSubgraph = 0;
+        $cleaned    = [];
+        foreach ($lines as $line) {
+            $trimmed = trim($line);
+            if (preg_match('/^subgraph\b/i', $trimmed)) {
+                $inSubgraph++;
+                $cleaned[] = $line;
+            } elseif ($trimmed === 'end') {
+                if ($inSubgraph > 0) {
+                    $inSubgraph--;
+                    $cleaned[] = $line;
+                }
+                // else: skip orphan `end`
+            } else {
+                $cleaned[] = $line;
+            }
+        }
+        $code = implode("\n", $cleaned);
+
+        // 5. Remove duplicate arrow lines (keep first occurrence)
+        $arrowLines = [];
+        $deduped    = [];
+        foreach (explode("\n", $code) as $line) {
+            $t = trim($line);
+            // A line is an arrow if it contains --> or ---
+            if (preg_match('/-->|---/', $t)) {
+                $key = preg_replace('/\s+/', ' ', $t); // normalize whitespace
+                if (isset($arrowLines[$key])) {
+                    continue; // skip duplicate
+                }
+                $arrowLines[$key] = true;
+            }
+            $deduped[] = $line;
+        }
+        $code = implode("\n", $deduped);
+
+        // 6. Fix style lines: fill= → fill:
+        $code = preg_replace('/style (\w+) fill=/', 'style $1 fill:', $code);
+
+        return trim($code);
+    }
+
+    /**
+     * Universal Mermaid flowchart system prompt based on software engineering standards.
+     * Used by both generate() and regenerate() for consistent output.
+     */
+    private function getMermaidSystemPrompt(): string
+    {
+        return <<<SYSTEM
+You are an expert system architect and software engineer. Your task is to convert a PRD (Product Requirements Document) into a valid, professional Mermaid.js flowchart that adheres to universal software engineering standards.
+
+=== OUTPUT RULES (MANDATORY) ===
+1. Output ONLY raw Mermaid code. NO markdown fences (```), NO explanation, NO comments.
+2. First line MUST be: graph TD  OR  graph LR  (choose based on complexity; LR for simple linear flows, TD for branching).
+3. Arrow syntax: A -->|label| B   NEVER use A -->|label|> B
+4. Max 15 nodes. Modularize; do not cram everything into one giant diagram.
+5. All subgraphs must be closed with "end".
+
+=== UNIVERSAL FLOWCHART STANDARDS ===
+
+STRUCTURE:
+Every flowchart MUST follow: Start → Input → Validation → Process → Decision → Output → End
+
+NODE RULES:
+- [Rectangle] = Process / Action ("Save User", "Generate Token", "Send Email")
+- {Diamond}   = Decision — MUST be a YES/NO question ("Email Valid?", "Token Exists?", "Payment Success?")
+- ([Stadium])  = Start / End state
+- Every Decision MUST have at least 2 branches (Yes/No or True/False)
+- Node names: 2–5 words MAX. No full sentences in nodes.
+- 1 node = 1 responsibility. Never combine multiple actions in one node.
+
+FLOW RULES:
+- Consistent direction (do not mix TD and LR in same flow)
+- No crossing arrows
+- Error flows are MANDATORY and must be recoverable (not dead-ends), e.g., loop back to form or show retry
+- Validation MUST occur before: database save, payment, auth, API call, transaction
+- State transitions must be explicit and logical
+
+SECURITY RULES (if system has auth/payment/API):
+- Always show: Validation → Authorization → Verification → Error Handling
+- Sessions / tokens must have expiry / invalid state branches
+
+HIDDEN ASSUMPTIONS TO ALWAYS INCLUDE:
+- Systems have states (Guest, Authenticated, Pending, Paid, Cancelled)
+- All decisions have consequences that change the next state
+- Error handling is part of the system, not optional
+- Validation happens before every important operation
+
+NAMING CONVENTIONS:
+- Good: "Verify Password", "Create Session", "Check Permission", "Save User"
+- Bad: "Database", "Email", "Process", "Handle"
+
+VALID EXAMPLE:
+graph LR
+    A([Start]) --> B[/Input Email & Password/]
+    B --> C{Email Registered?}
+    C -->|No| D[Show Error] --> B
+    C -->|Yes| E{Password Match?}
+    E -->|No| F[Show Error] --> B
+    E -->|Yes| G[Create Session]
+    G --> H[/Redirect to Dashboard/]
+    H --> I([End])
+
+=== CHECKLIST BEFORE OUTPUT ===
+✓ Has Start and End nodes
+✓ All decisions are YES/NO questions
+✓ All processes are action verbs
+✓ Error flows loop back (not dead-end)
+✓ Validation before every major operation
+✓ No node has more than 5 words
+✓ No crossing arrows
+SYSTEM;
     }
 
     /**
@@ -208,30 +318,15 @@ EXAMPLE: [{"title":"User Registration","description":"Users can register with em
             $model    = env('OPENAI_MODEL', 'llama-3.3-70b-versatile');
             $baseUrl  = rtrim(env('OPENAI_BASE_URL', 'https://api.groq.com/openai/v1'), '/');
 
-            $systemPrompt = 'You are an expert system architect. Convert PRD text into valid Mermaid.js flowchart code.
-
-STRICT RULES:
-1. Output ONLY raw Mermaid code. No markdown blocks (```).
-2. Use ONLY valid arrow syntax: A -->|label| B
-3. Use graph TD or graph LR as the first line.
-4. Keep it simple — max 12 nodes. Simplify complex PRDs.
-5. All subgraphs must be closed with "end".
-
-EXAMPLE:
-graph LR
-    A[Start] -->|click| B{Check}
-    B -->|yes| C[Success]
-    B -->|no| A';
-
             $response = \Illuminate\Support\Facades\Http::timeout(45)
                 ->withToken($apiKey)
                 ->post("{$baseUrl}/chat/completions", [
-                    'model'      => $model,
-                    'messages'   => [
-                        ['role' => 'system', 'content' => $systemPrompt],
+                    'model'       => $model,
+                    'messages'    => [
+                        ['role' => 'system', 'content' => $this->getMermaidSystemPrompt()],
                         ['role' => 'user',   'content' => substr($project->prd_content, 0, 3000)],
                     ],
-                    'max_tokens' => 1000,
+                    'max_tokens'  => 2000,
                     'temperature' => 0.3,
                 ]);
 
@@ -245,14 +340,8 @@ graph LR
                 throw new \Exception('AI returned empty response.');
             }
 
-            // Clean up markdown blocks
-            $mermaidCode = preg_replace('/^```(?:mermaid)?\n?/m', '', $mermaidCode);
-            $mermaidCode = preg_replace('/```$/m', '', $mermaidCode);
-            $mermaidCode = trim($mermaidCode);
-
-            // Auto-fix common AI Mermaid syntax mistakes
-            $mermaidCode = preg_replace('/\|([^|\n]{0,80})\|>/', '|$1|', $mermaidCode);
-            $mermaidCode = preg_replace('/style (\w+) fill=/', 'style $1 fill:', $mermaidCode);
+            // Sanitize: strip fences, fix & chars, remove orphan end, dedupe arrows
+            $mermaidCode = $this->sanitizeMermaid($mermaidCode);
 
             // Also re-extract requirements
             $requirements = $this->extractRequirements($project->prd_content);
