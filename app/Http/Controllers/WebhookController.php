@@ -20,22 +20,45 @@ class WebhookController extends Controller
 
         $data = $request->json()->all();
 
-        if ($data['action'] !== 'opened' && $data['action'] !== 'synchronize') {
-            return response()->json(['message' => 'Ignored event'], 200);
+        // Handle Ping event from GitHub
+        $eventName = $request->header('X-GitHub-Event');
+
+        if ($eventName === 'ping') {
+            return response()->json(['message' => 'pong'], 200);
         }
 
-        $project = Project::where('repo_url', $data['repository']['clone_url'])->first();
+        if ($eventName !== 'push' && $eventName !== 'pull_request') {
+            return response()->json(['message' => 'Ignored event: ' . $eventName], 200);
+        }
+
+        $projectUrl = $data['repository']['clone_url'] ?? '';
+        $htmlUrl = $data['repository']['html_url'] ?? '';
+        $project = Project::where('repo_url', $projectUrl)->orWhere('repo_url', $htmlUrl)->first();
 
         if (!$project) {
-            return response()->json(['error' => 'Project not found'], 404);
+            return response()->json(['error' => 'Project not found: ' . $projectUrl], 404);
         }
 
-        $commitHash = $data['pull_request']['head']['sha'];
-        $diff = $this->getGitHubDiff($data);
+        $commitHash = '';
+        $diffUrl = '';
 
-        ProcessAuditJob::dispatch($project->id, $commitHash, $diff);
+        if ($eventName === 'push') {
+            $commitHash = $data['head_commit']['id'] ?? '';
+            // For push events, append .diff to the commit URL to get the raw diff
+            $commitUrl = $data['head_commit']['url'] ?? '';
+            $diffUrl = $commitUrl ? $commitUrl . '.diff' : '';
+        } elseif ($eventName === 'pull_request') {
+            $commitHash = $data['pull_request']['head']['sha'] ?? '';
+            $diffUrl = $data['pull_request']['diff_url'] ?? '';
+        }
 
-        return response()->json(['message' => 'Audit queued'], 202);
+        if (empty($commitHash)) {
+            return response()->json(['error' => 'No commit hash found'], 400);
+        }
+
+        ProcessAuditJob::dispatch($project->id, $commitHash, $diffUrl);
+
+        return response()->json(['message' => 'Audit queued for commit ' . $commitHash], 202);
     }
 
     private function verifyGitHubSignature($payload, $signature): bool
@@ -48,10 +71,5 @@ class WebhookController extends Controller
         $hash = 'sha256=' . hash_hmac('sha256', $payload, $secret);
 
         return hash_equals($hash, $signature);
-    }
-
-    private function getGitHubDiff(array $data): string
-    {
-        return $data['pull_request']['diff_url'] ?? '';
     }
 }

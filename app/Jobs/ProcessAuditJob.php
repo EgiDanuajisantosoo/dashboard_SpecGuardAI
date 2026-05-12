@@ -55,11 +55,27 @@ class ProcessAuditJob implements ShouldQueue
     {
         $aiServiceUrl = env('AI_SERVICE_URL', 'http://localhost:8000');
 
-        $response = Http::timeout(60)->post("{$aiServiceUrl}/api/audit", [
-            'spec' => $project->spec_content,
-            'diff' => $diff,
-        ]);
+        try {
+            $response = Http::timeout(60)->post("{$aiServiceUrl}/api/audit", [
+                'spec' => $project->spec_content,
+                'diff' => $diff,
+            ]);
 
-        return $response->json();
+            $json = $response->json();
+
+            if (!is_array($json)) {
+                return [
+                    'status' => 'failed',
+                    'error' => 'Invalid response from AI Engine (HTTP ' . $response->status() . ')',
+                ];
+            }
+
+            return $json;
+        } catch (\Exception $e) {
+            return [
+                'status' => 'failed',
+                'error' => 'Connection to AI Engine failed: ' . $e->getMessage(),
+            ];
+        }
     }
 }
