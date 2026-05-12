@@ -11,7 +11,12 @@ class Project extends Model
         'name',
         'repo_url',
         'prd_content',
+        'prd_requirements',
         'spec_content',
+    ];
+
+    protected $casts = [
+        'prd_requirements' => 'array',
     ];
 
     public function audits(): HasMany
