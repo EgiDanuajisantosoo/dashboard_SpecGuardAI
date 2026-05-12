@@ -15,12 +15,32 @@
     <!-- Scripts and Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        /* Make Mermaid flowchart nodes larger */
+        .mermaid svg { font-size: 15px !important; }
+        .mermaid .node rect,
+        .mermaid .node circle,
+        .mermaid .node ellipse,
+        .mermaid .node polygon { min-width: 120px; }
+        .mermaid .node foreignObject { min-width: 120px; min-height: 40px; }
+        .mermaid .node .label { font-size: 14px !important; padding: 8px 12px !important; }
+        .mermaid .nodeLabel { font-size: 14px !important; }
+        .mermaid .edgeLabel { font-size: 12px !important; }
+    </style>
     <script>
-        mermaid.initialize({ 
-            startOnLoad: true, 
+        mermaid.initialize({
+            startOnLoad: true,
             theme: 'dark',
             securityLevel: 'loose',
-            suppressErrorNotifications: false
+            suppressErrorNotifications: false,
+            flowchart: {
+                nodeSpacing: 60,
+                rankSpacing: 80,
+                padding: 20,
+                htmlLabels: true,
+                useMaxWidth: false,
+            },
+            fontSize: 15,
         });
     </script>
 </head>

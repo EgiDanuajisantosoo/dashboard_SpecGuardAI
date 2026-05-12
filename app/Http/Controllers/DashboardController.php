@@ -45,9 +45,35 @@ class DashboardController extends Controller
         
         if ($projectId) {
             $project = Project::find($projectId);
+        } else {
+            // Default to the most recently created project
+            $project = Project::latest()->first();
         }
 
         return view('openspec', ['project' => $project]);
+    }
+
+    public function compliance(\Illuminate\Http\Request $request)
+    {
+        $projectId = $request->query('project');
+
+        if ($projectId) {
+            $project = Project::with('audits')->find($projectId);
+        } else {
+            // Default to the most recently updated project
+            $project = Project::with('audits')->latest()->first();
+        }
+
+        if (!$project) {
+            return redirect()->route('dashboard')->with('error', 'No project found. Please generate a spec first.');
+        }
+
+        $latestAudit = $project->audits()->latest('created_at')->first();
+
+        return view('compliance', [
+            'project' => $project,
+            'latestAudit' => $latestAudit,
+        ]);
     }
 
     public function generate(\Illuminate\Http\Request $request)
@@ -64,13 +90,21 @@ class DashboardController extends Controller
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => 'You are an expert system architect and auditor. Your task is to convert raw Product Requirements Documents (PRD) into a Mermaid.js flowchart code representing the system architecture or flow. 
-                        
-                        RULES:
-                        1. Output ONLY the raw Mermaid code.
-                        2. Do NOT use markdown code blocks (```).
-                        3. ENSURE the graph is complete (all blocks and subgraphs are closed).
-                        4. If the PRD is complex, simplify the logic into high-level steps to ensure the entire flow is captured without being cut off by token limits.',
+                        'content' => 'You are an expert system architect. Convert PRD text into valid Mermaid.js flowchart code.
+
+                        STRICT RULES:
+                        1. Output ONLY raw Mermaid code. No markdown blocks (```).
+                        2. Use ONLY valid arrow syntax: A -->|label| B  (NOT A -->|label|> B)
+                        3. Arrow labels use single pipe on each side: -->|text| NOT -->|text|>
+                        4. Use graph TD or graph LR as the first line.
+                        5. Keep it simple — max 15 nodes. Simplify complex PRDs.
+                        6. Ensure all subgraphs are properly closed with "end".
+
+                        VALID EXAMPLE:
+                        graph LR
+                            A[Start] -->|click| B{Check}
+                            B -->|yes| C[Success]
+                            B -->|no| A',
                     ],
                     [
                         'role' => 'user',
@@ -81,11 +115,17 @@ class DashboardController extends Controller
             ]);
 
             $mermaidCode = $response->choices[0]->message->content;
-            
-            // Clean up any markdown blocks more robustly
+
+            // Clean up markdown blocks
             $mermaidCode = preg_replace('/^```(?:mermaid)?\n?/m', '', $mermaidCode);
             $mermaidCode = preg_replace('/```$/m', '', $mermaidCode);
             $mermaidCode = trim($mermaidCode);
+
+            // Auto-fix common AI mistakes in Mermaid syntax
+            // Fix invalid arrow: -->|text|> → -->|text|
+            $mermaidCode = preg_replace('/\|([^|\n]{0,80})\|>/', '|$1|', $mermaidCode);
+            // Fix style lines that use = instead of : (common mistake)
+            $mermaidCode = preg_replace('/style (\w+) fill=/', 'style $1 fill:', $mermaidCode);
 
             $project = Project::create([
                 'name' => $request->project_area,

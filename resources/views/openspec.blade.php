@@ -84,10 +84,8 @@
                     </div>
                 </div>
 
-                <!-- Requirement Checklist & Diagram -->
+                <!-- Requirement Checklist -->
                 <div class="col-span-1 flex flex-col gap-6">
-                    
-                    <!-- Requirement Checklist -->
                     <div class="bg-[#161616] border border-[#2A2A2A] rounded-xl p-5 shadow-sm">
                         <div class="flex items-center gap-2 text-white font-medium mb-4">
                             <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
@@ -125,29 +123,71 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Flow Preview -->
-                    <div class="bg-[#161616] border border-[#2A2A2A] rounded-xl flex flex-col overflow-hidden shadow-sm flex-1">
-                        <div class="h-12 border-b border-[#2A2A2A] px-4 flex items-center bg-[#121212]">
-                            <span class="text-sm font-medium text-white flex items-center gap-2">
-                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>
-                                Flow Preview
-                            </span>
-                        </div>
-                        <div class="p-4 flex-1 flex flex-col items-center justify-center bg-[#0A0A0A] overflow-auto">
-                            @if($project && $project->spec_content)
-                                <div class="mermaid">
-                                    {!! $project->spec_content !!}
-                                </div>
-                            @else
-                                <p class="text-[10px] text-gray-600 mt-6 text-center italic">No flowchart available...</p>
-                            @endif
-                        </div>
+            <!-- Flow Preview — Full Width Large Panel -->
+            <div class="bg-[#161616] border border-[#2A2A2A] rounded-xl flex flex-col overflow-hidden shadow-sm">
+                <!-- Header -->
+                <div class="h-12 border-b border-[#2A2A2A] px-4 flex items-center justify-between bg-[#121212]">
+                    <span class="text-sm font-medium text-white flex items-center gap-2">
+                        <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg>
+                        Flow Preview
+                    </span>
+                    <div class="flex items-center gap-2">
+                        <button onclick="zoomIn()" class="px-2 py-1 text-xs text-gray-400 border border-[#333] rounded hover:bg-[#252525] transition-colors">＋ Zoom In</button>
+                        <button onclick="zoomOut()" class="px-2 py-1 text-xs text-gray-400 border border-[#333] rounded hover:bg-[#252525] transition-colors">－ Zoom Out</button>
+                        <button onclick="resetZoom()" class="px-2 py-1 text-xs text-gray-400 border border-[#333] rounded hover:bg-[#252525] transition-colors">⟳ Reset</button>
                     </div>
-
+                </div>
+                <!-- Diagram Area -->
+                <div id="flow-container" class="p-6 bg-[#0A0A0A] overflow-auto flex items-center justify-center" style="min-height: 520px;">
+                    @if($project && $project->spec_content)
+                        <div id="mermaid-wrapper" style="transform-origin: center; transition: transform 0.2s ease;">
+                            <div class="mermaid" style="font-size: 15px;">
+                                {!! $project->spec_content !!}
+                            </div>
+                        </div>
+                    @else
+                        <p class="text-[10px] text-gray-600 text-center italic">No flowchart available. Generate a spec first.</p>
+                    @endif
                 </div>
             </div>
 
         </div>
     </div>
+
+    <!-- Zoom Controls Script -->
+    <script>
+        let scale = 1;
+        const wrapper = document.getElementById('mermaid-wrapper');
+
+        function zoomIn() {
+            scale = Math.min(scale + 0.2, 3);
+            applyZoom();
+        }
+        function zoomOut() {
+            scale = Math.max(scale - 0.2, 0.3);
+            applyZoom();
+        }
+        function resetZoom() {
+            scale = 1;
+            applyZoom();
+        }
+        function applyZoom() {
+            if (wrapper) wrapper.style.transform = `scale(${scale})`;
+        }
+
+        // Mouse wheel zoom on the container
+        const container = document.getElementById('flow-container');
+        if (container) {
+            container.addEventListener('wheel', function(e) {
+                e.preventDefault();
+                if (e.deltaY < 0) zoomIn();
+                else zoomOut();
+            }, { passive: false });
+        }
+    </script>
+
 </x-app-layout>
+

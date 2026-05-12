@@ -120,12 +120,10 @@
                                 <label class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1.5 block">Project Area</label>
                                 <input type="text" name="project_area" value="Authentication Service" class="w-full bg-[#121212] border border-[#333] text-gray-300 text-sm rounded-md px-3 py-2 focus:outline-none focus:border-indigo-500 transition-colors">
                             </div>
-                            <div>
-                                <label class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1.5 block">Target Repository</label>
-                                <select name="target_repo" class="w-full bg-[#121212] border border-[#333] text-gray-300 text-sm rounded-md px-3 py-2 focus:outline-none focus:border-indigo-500 transition-colors appearance-none">
-                                    <option value="specguard-demo/core-api">specguard-demo/core-api</option>
-                                    <option value="specguard-demo/frontend">specguard-demo/frontend</option>
-                                </select>
+                             <div>
+                                <label class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1.5 block">Target Repository URL</label>
+                                <input type="text" name="target_repo" placeholder="https://github.com/username/repo.git" class="w-full bg-[#121212] border border-[#333] text-gray-300 text-sm rounded-md px-3 py-2 focus:outline-none focus:border-indigo-500 transition-colors font-mono">
+                                <p class="text-[10px] text-gray-600 mt-1">GitHub clone URL (used for webhook matching)</p>
                             </div>
                         </div>
                     </div>

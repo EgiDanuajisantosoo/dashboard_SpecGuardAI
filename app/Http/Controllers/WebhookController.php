@@ -33,7 +33,10 @@ class WebhookController extends Controller
 
         $projectUrl = $data['repository']['clone_url'] ?? '';
         $htmlUrl = $data['repository']['html_url'] ?? '';
-        $project = Project::where('repo_url', $projectUrl)->orWhere('repo_url', $htmlUrl)->first();
+        $project = Project::where('repo_url', $projectUrl)
+            ->orWhere('repo_url', $htmlUrl)
+            ->latest()
+            ->first();
 
         if (!$project) {
             return response()->json(['error' => 'Project not found: ' . $projectUrl], 404);
@@ -43,13 +46,21 @@ class WebhookController extends Controller
         $diffUrl = '';
 
         if ($eventName === 'push') {
-            $commitHash = $data['head_commit']['id'] ?? '';
-            // For push events, append .diff to the commit URL to get the raw diff
+            // For new branch creation, head_commit can be null
+            // Fall back to 'after' SHA which is always the HEAD of the push
+            $commitHash = $data['head_commit']['id']
+                ?? $data['after']
+                ?? '';
             $commitUrl = $data['head_commit']['url'] ?? '';
             $diffUrl = $commitUrl ? $commitUrl . '.diff' : '';
         } elseif ($eventName === 'pull_request') {
             $commitHash = $data['pull_request']['head']['sha'] ?? '';
             $diffUrl = $data['pull_request']['diff_url'] ?? '';
+        }
+
+        // Skip branch deletion events (after = 0000...)
+        if ($commitHash === '0000000000000000000000000000000000000000') {
+            return response()->json(['message' => 'Branch deletion ignored'], 200);
         }
 
         if (empty($commitHash)) {
