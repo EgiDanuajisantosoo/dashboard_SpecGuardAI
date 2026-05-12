@@ -18,7 +18,7 @@
 <body class="antialiased flex h-screen overflow-hidden selection:bg-indigo-500/30 bg-[#121212] text-[#E0E0E0] font-['Inter',_sans-serif] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-[#121212] [&::-webkit-scrollbar-thumb]:bg-[#333] [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb:hover]:bg-[#555]">
     
     <!-- Sidebar / Global Navbar -->
-    <x-ui::navbar />
+    <x-navbar />
 
     <!-- Main Content Area -->
     <main class="flex-1 flex flex-col min-w-0 {{ $mainBg ?? 'bg-[#121212]' }} relative">
