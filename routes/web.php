@@ -8,6 +8,7 @@ Route::get('/', function () {
     return view('ui.dashboard');
 });
 
+
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 Route::get('/project/{project}', [DashboardController::class, 'show'])->name('project.show');
 Route::get('/api/project/{project}/audits', [DashboardController::class, 'audits'])->name('api.project.audits');
