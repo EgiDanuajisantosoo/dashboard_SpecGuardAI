@@ -64,20 +64,27 @@ class DashboardController extends Controller
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => 'You are an expert system architect and auditor. Your task is to convert raw Product Requirements Documents (PRD) into a Mermaid.js flowchart code representing the system architecture or flow. Output ONLY the raw Mermaid code, without any markdown formatting blocks like ```mermaid or ```.',
+                        'content' => 'You are an expert system architect and auditor. Your task is to convert raw Product Requirements Documents (PRD) into a Mermaid.js flowchart code representing the system architecture or flow. 
+                        
+                        RULES:
+                        1. Output ONLY the raw Mermaid code.
+                        2. Do NOT use markdown code blocks (```).
+                        3. ENSURE the graph is complete (all blocks and subgraphs are closed).
+                        4. If the PRD is complex, simplify the logic into high-level steps to ensure the entire flow is captured without being cut off by token limits.',
                     ],
                     [
                         'role' => 'user',
                         'content' => $request->raw_text,
                     ],
                 ],
-                'max_tokens' => 1500,
+                'max_tokens' => 2500,
             ]);
 
             $mermaidCode = $response->choices[0]->message->content;
             
-            // Cleanup any markdown blocks just in case
-            $mermaidCode = preg_replace('/```(mermaid)?/', '', $mermaidCode);
+            // Clean up any markdown blocks more robustly
+            $mermaidCode = preg_replace('/^```(?:mermaid)?\n?/m', '', $mermaidCode);
+            $mermaidCode = preg_replace('/```$/m', '', $mermaidCode);
             $mermaidCode = trim($mermaidCode);
 
             $project = Project::create([

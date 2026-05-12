@@ -16,7 +16,12 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
     <script>
-        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'dark',
+            securityLevel: 'loose',
+            suppressErrorNotifications: false
+        });
     </script>
 </head>
 <body class="antialiased flex h-screen overflow-hidden selection:bg-indigo-500/30 bg-[#121212] text-[#E0E0E0] font-['Inter',_sans-serif] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-[#121212] [&::-webkit-scrollbar-thumb]:bg-[#333] [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb:hover]:bg-[#555]">
