@@ -220,6 +220,7 @@
                             $missing      = $rj['missing']       ?? [];
                             $qualityNotes = $rj['quality_notes'] ?? [];
                             $missingRequirements = $rj['missing_requirements'] ?? [];
+                            $reviews      = $rj['reviews']       ?? [];  // NEW: per-feature detailed reviews
 
                             // If old node_status format, derive lists
                             if (empty($implemented) && empty($missing) && !empty($rj['node_status'])) {
@@ -262,10 +263,12 @@
                         @endphp
 
                         {{-- Feature Status Cards --}}
-                        <div class="grid grid-cols-1 gap-2">
+                        <div class="grid grid-cols-1 gap-3">
                             @foreach($allFeatures as $key => $label)
                             @php
                                 $status = $featureStatuses[$key] ?? 'unknown';
+                                $review = $reviews[$key] ?? null;
+
                                 $colors = match($status) {
                                     'implemented' => [
                                         'border' => 'border-emerald-900/40',
@@ -275,6 +278,7 @@
                                         'badge'  => 'bg-emerald-900/30 text-emerald-400 border-emerald-800/40',
                                         'label'  => '✓ Terimplementasi',
                                         'note'   => 'Fitur sudah ada dan sesuai dengan PRD.',
+                                        'detail_bg' => '',
                                     ],
                                     'partial' => [
                                         'border' => 'border-yellow-900/40',
@@ -284,6 +288,7 @@
                                         'badge'  => 'bg-yellow-900/30 text-yellow-400 border-yellow-800/40',
                                         'label'  => '⚠ Tidak Sesuai PRD',
                                         'note'   => 'Fitur ada tapi belum sepenuhnya sesuai dengan spesifikasi PRD.',
+                                        'detail_bg' => 'bg-yellow-950/20 border-yellow-900/30',
                                     ],
                                     'missing' => [
                                         'border' => 'border-red-900/40',
@@ -293,6 +298,7 @@
                                         'badge'  => 'bg-red-900/30 text-red-400 border-red-800/40',
                                         'label'  => '✗ Belum Terimplementasi',
                                         'note'   => 'Fitur ini belum ditemukan dalam kodebase.',
+                                        'detail_bg' => 'bg-red-950/20 border-red-900/30',
                                     ],
                                     default => [
                                         'border' => 'border-gray-800/40',
@@ -302,18 +308,74 @@
                                         'badge'  => 'bg-gray-800/30 text-gray-400 border-gray-700/40',
                                         'label'  => '? Tidak Diketahui',
                                         'note'   => 'Belum ada data audit untuk fitur ini.',
+                                        'detail_bg' => '',
                                     ],
                                 };
+
+                                $priority = $review['priority'] ?? null;
+                                $priorityBadge = match($priority) {
+                                    'high'   => 'bg-red-900/30 text-red-400 border-red-800/30',
+                                    'medium' => 'bg-yellow-900/30 text-yellow-400 border-yellow-800/30',
+                                    'low'    => 'bg-gray-800/30 text-gray-400 border-gray-700/30',
+                                    default  => '',
+                                };
                             @endphp
-                            <div class="flex items-center gap-3 border {{ $colors['border'] }} {{ $colors['bg'] }} rounded-lg px-4 py-3">
-                                <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 {{ $colors['dot'] }}"></span>
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center justify-between gap-2">
-                                        <span class="text-sm font-medium text-gray-200">{{ $label }}</span>
-                                        <span class="text-[10px] font-mono px-2 py-0.5 rounded border {{ $colors['badge'] }} flex-shrink-0">{{ $colors['label'] }}</span>
+
+                            {{-- Card wrapper --}}
+                            <div class="rounded-lg border {{ $colors['border'] }} {{ $colors['bg'] }} overflow-hidden">
+                                {{-- Card header --}}
+                                <div class="flex items-center gap-3 px-4 py-3">
+                                    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 {{ $colors['dot'] }}"></span>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <span class="text-sm font-medium text-gray-200">{{ $label }}</span>
+                                            <div class="flex items-center gap-1.5 flex-shrink-0">
+                                                @if($priority && $status !== 'implemented')
+                                                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded border {{ $priorityBadge }}">{{ strtoupper($priority) }}</span>
+                                                @endif
+                                                <span class="text-[10px] font-mono px-2 py-0.5 rounded border {{ $colors['badge'] }}">{{ $colors['label'] }}</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <p class="text-xs {{ $colors['text'] }} mt-0.5 opacity-80">{{ $colors['note'] }}</p>
                                 </div>
+
+                                {{-- Detailed review panel — only for partial and missing --}}
+                                @if($review && $status !== 'implemented')
+                                <div class="border-t {{ $colors['border'] }} {{ $colors['detail_bg'] }} px-4 py-3 space-y-2.5">
+
+                                    {{-- What was found --}}
+                                    @if(!empty($review['found']))
+                                    <div class="flex gap-2.5">
+                                        <span class="text-[10px] font-bold font-mono text-gray-500 flex-shrink-0 mt-0.5 w-16">FOUND</span>
+                                        <p class="text-xs text-gray-400 leading-relaxed">{{ $review['found'] }}</p>
+                                    </div>
+                                    @endif
+
+                                    {{-- Issue description --}}
+                                    @if(!empty($review['issue']))
+                                    <div class="flex gap-2.5">
+                                        <span class="text-[10px] font-bold font-mono {{ $colors['text'] }} flex-shrink-0 mt-0.5 w-16">ISSUE</span>
+                                        <p class="text-xs {{ $colors['text'] }} leading-relaxed opacity-90">{{ $review['issue'] }}</p>
+                                    </div>
+                                    @endif
+
+                                    {{-- Recommendation --}}
+                                    @if(!empty($review['recommendation']))
+                                    <div class="flex gap-2.5 pt-1 border-t {{ $colors['border'] }}">
+                                        <span class="text-[10px] font-bold font-mono text-indigo-400 flex-shrink-0 mt-0.5 w-16">FIX</span>
+                                        <p class="text-xs text-indigo-300/80 leading-relaxed">{{ $review['recommendation'] }}</p>
+                                    </div>
+                                    @endif
+
+                                </div>
+                                @elseif($status === 'implemented')
+                                    {{-- Implemented: compact single-line note --}}
+                                @elseif($status !== 'implemented')
+                                    {{-- No review yet: show default note --}}
+                                    <div class="border-t {{ $colors['border'] }} px-4 py-2">
+                                        <p class="text-xs {{ $colors['text'] }} opacity-70">{{ $colors['note'] }}</p>
+                                    </div>
+                                @endif
                             </div>
                             @endforeach
                         </div>
@@ -353,6 +415,132 @@
                     @endif
                     </div>
                 </div>
+
+            </div>
+
+            {{-- ═══ AI Fix Prompt Panel (full-width below the 2-col grid) ═══ --}}
+            @if($latestAudit && !empty($rj) && !isset($rj['error']))
+            @php
+                /* Build the prompt from audit data */
+                $auditPartial  = $rj['partial']       ?? [];
+                $auditMissing  = $rj['missing']       ?? [];
+                $auditReviews  = $rj['reviews']       ?? [];
+                $auditSummary  = $rj['summary']       ?? '';
+                $prdSnippet    = Str::limit($project->prd_content ?? '', 600, '...');
+
+                $promptLines   = [];
+                $promptLines[] = "You are a senior software engineer. Fix ALL compliance issues in this codebase based on the audit report below.";
+                $promptLines[] = "";
+                $promptLines[] = "## Project: {$project->name}";
+                $promptLines[] = "## Audit Summary: {$auditSummary}";
+                $promptLines[] = "## PRD Excerpt:";
+                $promptLines[] = $prdSnippet;
+                $promptLines[] = "";
+                $promptLines[] = "---";
+                $promptLines[] = "## Issues To Fix:";
+                $promptLines[] = "";
+
+                if (!empty($auditPartial)) {
+                    $promptLines[] = "### ⚠ PARTIAL — Feature exists but does not fully match PRD:";
+                    foreach ($auditPartial as $feat) {
+                        $label = ucwords(str_replace('_', ' ', $feat));
+                        $r = $auditReviews[$feat] ?? null;
+                        $promptLines[] = "";
+                        $promptLines[] = "**{$label}**";
+                        if ($r) {
+                            if (!empty($r['found']))          $promptLines[] = "- Found: {$r['found']}";
+                            if (!empty($r['issue']))          $promptLines[] = "- Issue: {$r['issue']}";
+                            if (!empty($r['recommendation'])) $promptLines[] = "- Fix: {$r['recommendation']}";
+                        }
+                    }
+                    $promptLines[] = "";
+                }
+
+                if (!empty($auditMissing)) {
+                    $promptLines[] = "### ✗ MISSING — Feature not found in codebase at all:";
+                    foreach ($auditMissing as $feat) {
+                        $label = ucwords(str_replace('_', ' ', $feat));
+                        $r = $auditReviews[$feat] ?? null;
+                        $promptLines[] = "";
+                        $promptLines[] = "**{$label}**";
+                        if ($r) {
+                            if (!empty($r['issue']))          $promptLines[] = "- PRD requires: {$r['issue']}";
+                            if (!empty($r['recommendation'])) $promptLines[] = "- Implementation: {$r['recommendation']}";
+                            if (!empty($r['priority']))       $promptLines[] = "- Priority: {$r['priority']}";
+                        } else {
+                            $promptLines[] = "- This feature is completely missing. Implement it according to the PRD.";
+                        }
+                    }
+                    $promptLines[] = "";
+                }
+
+                if (!empty($rj['quality_notes'])) {
+                    $promptLines[] = "### 📋 General Quality Issues:";
+                    foreach ($rj['quality_notes'] as $note) {
+                        $promptLines[] = "- {$note}";
+                    }
+                    $promptLines[] = "";
+                }
+
+                $promptLines[] = "---";
+                $promptLines[] = "## Instructions:";
+                $promptLines[] = "1. Fix ALL partial features to fully match PRD specification.";
+                $promptLines[] = "2. Implement ALL missing features from scratch.";
+                $promptLines[] = "3. Follow existing code style and architecture conventions.";
+                $promptLines[] = "4. Add proper validation, error handling, and security where missing.";
+                $promptLines[] = "5. Show the complete file content for each changed file.";
+
+                $aiPrompt = implode("\n", $promptLines);
+                $hasIssues = !empty($auditPartial) || !empty($auditMissing);
+            @endphp
+
+            @if($hasIssues)
+            <div class="bg-[#161616] border border-[#2A2A2A] rounded-xl overflow-hidden shadow-sm">
+                <div class="h-12 border-b border-[#2A2A2A] px-5 flex items-center justify-between bg-[#121212]">
+                    <div class="flex items-center gap-2 text-white font-medium">
+                        <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                        <span>Rekomendasi Prompt AI</span>
+                        <span class="text-[10px] font-mono text-gray-500">— Salin dan tempelkan ke AI assistant kamu untuk memperbaiki semua masalah</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-3 text-[10px] font-mono text-gray-500">
+                            @if(!empty($auditPartial))
+                            <span class="px-2 py-0.5 rounded border border-yellow-900/40 bg-yellow-950/30 text-yellow-400">{{ count($auditPartial) }} partial</span>
+                            @endif
+                            @if(!empty($auditMissing))
+                            <span class="px-2 py-0.5 rounded border border-red-900/40 bg-red-950/30 text-red-400">{{ count($auditMissing) }} missing</span>
+                            @endif
+                        </div>
+                        <button id="copy-prompt-btn" onclick="copyAiPrompt()"
+                            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-violet-600/80 hover:bg-violet-600 border border-violet-500/50 rounded-md transition-all">
+                            <svg id="copy-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            <svg id="check-icon" class="w-3.5 h-3.5 hidden text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <span id="copy-btn-text">Copy Prompt</span>
+                        </button>
+                    </div>
+                </div>
+
+                {{-- Prompt Content --}}
+                <div class="relative">
+                    <textarea id="ai-fix-prompt" readonly
+                        class="w-full bg-[#0D0D0D] text-gray-300 text-xs font-mono leading-relaxed p-5 resize-none outline-none border-none focus:ring-0 custom-scrollbar"
+                        style="min-height: 340px; max-height: 520px;"
+                        onclick="this.select()">{{ $aiPrompt }}</textarea>
+
+                    {{-- Gradient fade at bottom --}}
+                    <div class="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-[#0D0D0D] to-transparent"></div>
+                </div>
+
+                {{-- Footer hint --}}
+                <div class="px-5 py-3 border-t border-[#2A2A2A] bg-[#111] flex items-center justify-between">
+                    <p class="text-[10px] text-gray-600">Prompt ini berisi konteks PRD, daftar masalah, dan instruksi lengkap untuk AI. Gunakan dengan ChatGPT, Claude, Gemini, atau AI lainnya.</p>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-mono text-gray-600">{{ number_format(strlen($aiPrompt)) }} chars</span>
+                    </div>
+                </div>
+            </div>
+            @endif
+            @endif
 
         </div>
     </div>
@@ -546,6 +734,42 @@
                 if (e.deltaY < 0) cmZoomIn();
                 else cmZoomOut();
             }, { passive: false });
+        }
+    </script>
+
+    {{-- Copy AI Prompt Script --}}
+    <script>
+        function copyAiPrompt() {
+            const textarea = document.getElementById('ai-fix-prompt');
+            const btn      = document.getElementById('copy-prompt-btn');
+            const copyIcon = document.getElementById('copy-icon');
+            const checkIcon= document.getElementById('check-icon');
+            const btnText  = document.getElementById('copy-btn-text');
+
+            if (!textarea) return;
+
+            navigator.clipboard.writeText(textarea.value).then(() => {
+                // Show success state
+                copyIcon.classList.add('hidden');
+                checkIcon.classList.remove('hidden');
+                btnText.textContent = 'Copied!';
+                btn.classList.remove('bg-violet-600/80', 'hover:bg-violet-600', 'border-violet-500/50');
+                btn.classList.add('bg-emerald-700/60', 'border-emerald-500/50');
+
+                setTimeout(() => {
+                    copyIcon.classList.remove('hidden');
+                    checkIcon.classList.add('hidden');
+                    btnText.textContent = 'Copy Prompt';
+                    btn.classList.add('bg-violet-600/80', 'hover:bg-violet-600', 'border-violet-500/50');
+                    btn.classList.remove('bg-emerald-700/60', 'border-emerald-500/50');
+                }, 2500);
+            }).catch(() => {
+                // Fallback for older browsers
+                textarea.select();
+                document.execCommand('copy');
+                btnText.textContent = 'Copied!';
+                setTimeout(() => { btnText.textContent = 'Copy Prompt'; }, 2000);
+            });
         }
     </script>
 

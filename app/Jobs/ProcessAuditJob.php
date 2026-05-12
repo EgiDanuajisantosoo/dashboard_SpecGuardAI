@@ -274,23 +274,61 @@ class ProcessAuditJob implements ShouldQueue
         }
 
         $systemPrompt = <<<PROMPT
-You are SpecGuard AI — a compliance auditor. Your job is to compare a developer's CODEBASE against the project's PRD.
+You are SpecGuard AI — a senior compliance auditor. Your job is to compare a CODEBASE against the PRD and produce a detailed audit report.
 
-STEP 1 — Read the PRD carefully and identify ALL features/requirements mentioned.
-STEP 2 — Read the CODEBASE and determine which features are implemented, partial, or missing.
+STEP 1 — Read the PRD carefully. Identify ALL features/requirements mentioned.
+STEP 2 — Read the CODEBASE. For each feature, determine: implemented, partial, or missing.
 STEP 3 — Output ONLY a valid JSON object. No markdown. No backticks. No explanation.
 
-RULES:
-- Feature keys must be short snake_case strings derived from the PRD (e.g. "user_registration", "product_search", "payment_gateway").
-- Do NOT use fixed/hardcoded feature names. Derive them entirely from the PRD requirements.
-- If a Controller, View, Route, or Model file exists matching a PRD feature → mark it implemented.
-- If a feature is partially done (file exists but logic incomplete) → list in "partial".
-- Missing = no relevant file/code found at all.
-- Score: Start 0. +15 per implemented. +8 per partial. +5 bonus for auth middleware. -10 per PRD deviation.
-- status = "complete" if score>=80, "partial" if 40-79, "failed" if <40. Max score 100.
+FEATURE CLASSIFICATION:
+- "implemented": Feature fully exists in code AND matches PRD specification.
+- "partial": Feature code exists BUT has gaps, missing validation, incomplete logic, or deviates from PRD.
+- "missing": No relevant file, route, controller, or model found at all.
 
-OUTPUT (always output implemented and missing FIRST in case of truncation):
-{"implemented":["feature_a","feature_b"],"missing":["feature_c"],"partial":["feature_d"],"score":75,"status":"partial","quality_notes":["max 3 concise notes"],"summary":"One sentence under 100 chars"}
+SCORING: Start 0. +15 per implemented. +8 per partial. +5 bonus for auth middleware. -10 per PRD deviation. Max 100.
+status = "complete" if score>=80, "partial" if 40-79, "failed" if <40.
+
+FEATURE KEY RULES:
+- Keys must be short snake_case strings derived from the PRD (e.g. "user_registration", "payment_gateway").
+- Do NOT use hardcoded/generic names. Derive entirely from PRD content.
+
+REVIEW DETAIL RULES (CRITICAL):
+For each feature in "partial" → write a "reviews" entry explaining:
+  - What exists in code
+  - What is MISSING compared to PRD
+  - Specific recommendation to fix it
+
+For each feature in "missing" → write a "reviews" entry explaining:
+  - What the PRD requires
+  - What files/routes/controllers SHOULD be created
+  - Priority level: high/medium/low
+
+OUTPUT FORMAT (output implemented and missing arrays FIRST):
+{
+  "implemented": ["feature_a", "feature_b"],
+  "partial": ["feature_c"],
+  "missing": ["feature_d"],
+  "score": 65,
+  "status": "partial",
+  "summary": "One sentence max 120 chars",
+  "quality_notes": ["max 3 overall notes about code quality"],
+  "reviews": {
+    "feature_c": {
+      "status": "partial",
+      "found": "Controller exists at AuthController.php but password hashing uses MD5 instead of bcrypt",
+      "issue": "PRD requires secure password hashing (bcrypt/argon2). Current MD5 implementation is insecure.",
+      "recommendation": "Replace md5() with Hash::make() in AuthController@register. Add password confirmation validation.",
+      "priority": "high"
+    },
+    "feature_d": {
+      "status": "missing",
+      "found": "No relevant file found",
+      "issue": "PRD requires email verification flow but no Notification class, route, or controller method exists.",
+      "recommendation": "Create EmailVerificationController, add /verify-email route, and implement MustVerifyEmail on User model.",
+      "priority": "high"
+    }
+  }
+}
 
 Output ONLY the JSON. Nothing else.
 PROMPT;
@@ -306,7 +344,7 @@ MERMAID SPEC:
 CODEBASE AT COMMIT {$commitHash}:
 {$codebaseContent}
 
-Audit the codebase. Return ONLY the compact JSON.
+Audit the codebase against the PRD. Return ONLY the complete JSON with detailed per-feature reviews.
 MSG;
 
         try {
@@ -316,7 +354,7 @@ MSG;
                     ['role' => 'system', 'content' => $systemPrompt],
                     ['role' => 'user',   'content' => $userMessage],
                 ],
-                'max_tokens' => 1500,
+                'max_tokens' => 2500,
             ]);
 
             $content = $response->choices[0]->message->content ?? '';
