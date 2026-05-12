@@ -24,6 +24,7 @@ ui_elements:
   - status_badge
   - mermaid_diagram
   - missing_requirements_list
+  - recommended_prompt_panel
   - last_updated_timestamp
   - view_details_button
 
@@ -52,6 +53,7 @@ response:
           status: enum (pending, partial, complete, failed)
           result_json: object
           missing_requirements: array
+          recommended_prompt: string
           commit_hash: string
           created_at: datetime
 

@@ -34,6 +34,7 @@ response_success:
         score: integer
         status: string
         result_json: object
+        recommended_prompt: string
         created_at: datetime
         updated_at: datetime
 

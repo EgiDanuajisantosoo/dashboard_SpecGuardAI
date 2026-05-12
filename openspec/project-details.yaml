@@ -24,6 +24,7 @@ page_sections:
     - progress_bar
     - mermaid_diagram
     - missing_requirements_alert
+    - recommended_prompt_panel
     - commit_hash
     - audit_timestamp
 
@@ -51,6 +52,7 @@ response:
       score: integer
       status: string
       result_json: object
+      recommended_prompt: string
       commit_hash: string
       created_at: datetime
 

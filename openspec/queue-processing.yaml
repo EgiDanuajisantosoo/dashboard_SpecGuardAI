@@ -40,6 +40,7 @@ ai_response_contract:
   score: integer (0-100)
   status: enum (pending, partial, complete, failed)
   missing_requirements: array<string>
+  recommended_prompt: string
   node_status: object
     auth: boolean
     validation: boolean
