@@ -101,7 +101,7 @@
                             </div> -->
                         </div>
                         <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-5 py-2 rounded-md shadow-sm transition-all focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-[#121212] inline-block">
-                            Generate OpenSpec
+                            Generate Flow & Spec
                         </button>
                     </div>
                 </div>
