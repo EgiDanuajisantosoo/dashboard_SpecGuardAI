@@ -1,16 +1,28 @@
 # queue-processing Specification
 
 ## Purpose
-TBD - created by archiving change core-system. Update Purpose after archive.
+Menangani analisis kepatuhan kode secara asinkron dengan mengintegrasikan data dari GitHub dan menggunakan Kecerdasan Buatan (AI) untuk audit otomatis.
+
 ## Requirements
 ### Requirement: Async ProcessAuditJob
-Sistem SHALL menyediakan job class `ProcessAuditJob` yang beroperasi secara asynchronous via Redis queue untuk menangani komunikasi dengan FastAPI AI Engine, mengurai response JSON, dan menyimpannya ke database.
+Sistem SHALL menyediakan job class `ProcessAuditJob` yang beroperasi secara asynchronous via antrean (Laravel Queue) untuk mengambil konten kode dari GitHub, menghubungi AI Engine (Gemini/OpenAI), dan menyimpan hasil audit.
 
 #### Scenario: AI Engine successfully audits code
-- **WHEN** job worker menghubungi FastAPI AI engine dan mendapatkan response JSON HTTP 200 yang valid
-- **THEN** sistem memparsing JSON tersebut dan menyimpan data (score, status, missing requirements) ke tabel `audits`
+- **WHEN** job worker memproses audit untuk commit tertentu
+- **THEN** sistem mengambil snapshot kode atau diff dari GitHub API
+- **THEN** sistem mengirimkan konteks PRD, Spesifikasi, dan Kode ke AI Engine
+- **THEN** sistem memparsing response JSON dari AI dan menyimpan data (score, status, detailed reviews) ke tabel `audits`
 
-#### Scenario: AI Engine timeouts or fails
-- **WHEN** pemanggilan HTTP ke FastAPI AI engine memakan waktu lebih dari timeout (mis. 60s) atau mengembalikan HTTP error
-- **THEN** sistem menunda eksekusi dan akan me-retry job tersebut hingga batas maksimal (mis. 3 kali) sebelum ditandai gagal sepenuhnya
+### Requirement: GitHub Integration & Code Fetching
+Job worker MUST mampu mengambil konten kode dari repositori GitHub menggunakan GitHub API (Trees/Blobs) atau fallback ke URL diff jika terkena pembatasan (rate limit).
 
+#### Scenario: GitHub API is rate limited
+- **WHEN** pengambilan snapshot kode melalui API Trees mengembalikan error rate limit
+- **THEN** sistem melakukan fallback dengan mengambil konten `.diff` mentah dari URL commit GitHub untuk tetap bisa melakukan analisis.
+
+### Requirement: AI Analysis Error Handling & Retries
+Sistem SHALL menangani kegagalan pemanggilan API AI dengan strategi backoff yang sesuai, terutama untuk menangani error rate limit (HTTP 429).
+
+#### Scenario: AI Engine rate limits or timeouts
+- **WHEN** pemanggilan API AI mengembalikan error rate limit atau timeout
+- **THEN** sistem menandai status audit sebagai 'pending' dan melempar kembali eksepsi agar job di-retry oleh antrean dengan waktu tunggu (backoff) yang meningkat progresif.
