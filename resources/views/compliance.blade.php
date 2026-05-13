@@ -118,429 +118,274 @@
                 </div>
             </div>
 
-            <!-- Workflow Compliance Map (Mermaid) -->
-            <div class="bg-[#161616] border border-[#2A2A2A] rounded-xl p-6 shadow-sm overflow-hidden flex flex-col relative">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h2 class="text-lg font-semibold text-white">Workflow Compliance Map</h2>
-                        <p class="text-sm text-gray-400">Real-time dependency and requirement trace. Node colors reflect AI audit results.</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <!-- Zoom Controls -->
-                        <div class="flex items-center gap-1">
-                            <button onclick="cmZoomIn()" class="px-2 py-1 text-xs text-gray-400 border border-[#333] rounded hover:bg-[#252525] transition-colors">＋</button>
-                            <button onclick="cmZoomOut()" class="px-2 py-1 text-xs text-gray-400 border border-[#333] rounded hover:bg-[#252525] transition-colors">－</button>
-                            <button onclick="cmResetZoom()" class="px-2 py-1 text-xs text-gray-400 border border-[#333] rounded hover:bg-[#252525] transition-colors">⟳</button>
-                        </div>
-                        <div class="flex items-center gap-4 text-[10px] font-mono text-gray-400 uppercase tracking-wider bg-[#121212] px-3 py-1.5 border border-[#2A2A2A] rounded-md">
-                            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Implemented</div>
-                            <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Missing / Broken</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Dynamic Flowchart Visualization -->
-                <div class="relative bg-[#0A0A0A] rounded-lg border border-[#2A2A2A] flex items-center justify-center overflow-auto" id="cm-container" style="min-height: 560px;">
-                    @if($project->spec_content)
-                        <div id="cm-wrapper" style="transform-origin: center; transition: transform 0.2s ease; padding: 32px;">
-                            <div class="mermaid" id="compliance-mermaid" style="font-size: 15px;">
-                                {!! $project->spec_content !!}
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left Column: Workflow Compliance Map (Mermaid) -->
+                <div class="lg:col-span-8 flex flex-col gap-6">
+                    <div class="bg-[#161616] border border-[#2A2A2A] rounded-xl p-6 shadow-sm overflow-hidden flex flex-col relative h-full">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <h2 class="text-lg font-semibold text-white">Workflow Compliance Map</h2>
+                                <p class="text-sm text-gray-400">Real-time dependency and requirement trace. Node colors reflect AI audit results.</p>
                             </div>
-                        </div>
-                    @else
-                        <p class="text-gray-500 text-sm italic">No specification has been generated for this project yet.</p>
-                    @endif
-                </div>
-
-                @if($latestAudit && isset($latestAudit->result_json['summary']))
-                <p class="text-xs text-gray-500 mt-3 italic">AI Summary: {{ $latestAudit->result_json['summary'] }}</p>
-                @endif
-            </div>
-
-            <!-- Bottom Two Columns -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                
-                <!-- Recent Commits -->
-                <div class="bg-[#161616] border border-[#2A2A2A] rounded-xl flex flex-col overflow-hidden">
-                    <div class="h-12 border-b border-[#2A2A2A] px-5 flex items-center justify-between bg-[#121212]">
-                        <div class="flex items-center gap-2 text-white font-medium">
-                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
-                            Recent Commits
-                        </div>
-                    </div>
-                    <div class="p-5 flex flex-col gap-4">
-                        @forelse($project->audits->sortByDesc('created_at')->take(5) as $audit)
-                        <div class="flex gap-3">
-                            <div class="w-8 h-8 rounded-full bg-[#252525] border border-[#333] flex items-center justify-center flex-shrink-0">
-                                @if($audit->status === 'complete')
-                                <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                @elseif($audit->status === 'partial')
-                                <svg class="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"></path></svg>
-                                @else
-                                <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                @endif
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex justify-between items-baseline mb-0.5">
-                                    <h4 class="text-sm font-medium text-gray-200 truncate font-mono">{{ substr($audit->commit_hash, 0, 10) }}</h4>
-                                    <span class="text-xs text-gray-500 flex-shrink-0">{{ $audit->created_at->diffForHumans() }}</span>
+                            <div class="flex items-center gap-3">
+                                <!-- Zoom Controls -->
+                                <div class="flex items-center gap-1">
+                                    <button onclick="cmZoomIn()" class="px-2 py-1 text-xs text-gray-400 border border-[#333] rounded hover:bg-[#252525] transition-colors">＋</button>
+                                    <button onclick="cmZoomOut()" class="px-2 py-1 text-xs text-gray-400 border border-[#333] rounded hover:bg-[#252525] transition-colors">－</button>
+                                    <button onclick="cmResetZoom()" class="px-2 py-1 text-xs text-gray-400 border border-[#333] rounded hover:bg-[#252525] transition-colors">⟳</button>
                                 </div>
-                                <p class="text-xs text-gray-400 mb-2">Score: <span class="font-bold {{ $audit->score >= 80 ? 'text-emerald-400' : ($audit->score >= 50 ? 'text-yellow-400' : 'text-red-400') }}">{{ $audit->score }}%</span></p>
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono border {{ $audit->status === 'complete' ? 'border-emerald-900/50 bg-emerald-900/20 text-emerald-400' : ($audit->status === 'partial' ? 'border-yellow-900/50 bg-yellow-900/20 text-yellow-400' : 'border-red-900/50 bg-red-900/20 text-red-400') }}">Status: {{ strtoupper($audit->status) }}</span>
+                                <div class="flex items-center gap-4 text-[10px] font-mono text-gray-400 uppercase tracking-wider bg-[#121212] px-3 py-1.5 border border-[#2A2A2A] rounded-md">
+                                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Implemented</div>
+                                    <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Missing / Broken</div>
+                                </div>
                             </div>
                         </div>
-                        @empty
-                        <div class="text-sm text-gray-500 text-center py-8">
-                            <svg class="w-10 h-10 mx-auto mb-2 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                            No commits audited yet. Push to GitHub to trigger an audit.
-                        </div>
-                        @endforelse
-                    </div>
-                </div>
 
-                <!-- AI Audit Insights — Feature Status Panel -->
-                <div class="bg-[#161616] border border-[#2A2A2A] rounded-xl flex flex-col overflow-hidden">
-                    <div class="h-12 border-b border-[#2A2A2A] px-5 flex items-center gap-2 bg-[#121212]">
-                        <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-                        <span class="text-white font-medium">Feature Status</span>
-                        @if($latestAudit)
-                        <span class="ml-auto text-[10px] font-mono px-2 py-0.5 rounded border
-                            {{ ($latestAudit->status ?? 'failed') === 'complete' ? 'border-emerald-800/50 bg-emerald-900/20 text-emerald-400' :
-                               (($latestAudit->status ?? 'failed') === 'partial' ? 'border-yellow-800/50 bg-yellow-900/20 text-yellow-400' :
-                               'border-red-800/50 bg-red-900/20 text-red-400') }}">
-                            Score: {{ $latestAudit->score ?? 0 }}%
-                        </span>
+                        <!-- Dynamic Flowchart Visualization -->
+                        <div class="relative bg-[#0A0A0A] rounded-lg border border-[#2A2A2A] flex-1 flex items-center justify-center overflow-auto" id="cm-container" style="min-height: 600px;">
+                            @if($project->spec_content)
+                                <div id="cm-wrapper" style="transform-origin: center; transition: transform 0.2s ease; padding: 32px;">
+                                    <div class="mermaid" id="compliance-mermaid" style="font-size: 15px;">
+                                        {!! $project->spec_content !!}
+                                    </div>
+                                </div>
+                            @else
+                                <p class="text-gray-500 text-sm italic">No specification has been generated for this project yet.</p>
+                            @endif
+                        </div>
+
+                        @if($latestAudit && isset($latestAudit->result_json['summary']))
+                        <p class="text-xs text-gray-500 mt-3 italic">AI Summary: {{ $latestAudit->result_json['summary'] }}</p>
                         @endif
                     </div>
-                    <div class="p-5 flex flex-col gap-3 overflow-auto flex-1">
-                    @if($latestAudit)
+                </div>
+
+                <!-- Right Column: Info Stack -->
+                <div class="lg:col-span-4 flex flex-col gap-6">
+                    
+                    {{-- 1. AI Fix Prompt Panel --}}
+                    @if($latestAudit && !empty($latestAudit->result_json) && !isset($latestAudit->result_json['error']))
                         @php
-                            $rj = $latestAudit->result_json ?? [];
-                            $implemented  = $rj['implemented']   ?? [];
-                            $missing      = $rj['missing']       ?? [];
-                            $qualityNotes = $rj['quality_notes'] ?? [];
-                            $missingRequirements = $rj['missing_requirements'] ?? [];
-                            $reviews      = $rj['reviews']       ?? [];  // NEW: per-feature detailed reviews
+                            $rj_prompt = $latestAudit->result_json;
+                            $auditPartial  = $rj_prompt['partial']       ?? [];
+                            $auditMissing  = $rj_prompt['missing']       ?? [];
+                            $auditReviews  = $rj_prompt['reviews']       ?? [];
+                            $auditSummary  = $rj_prompt['summary']       ?? '';
+                            $prdSnippet    = \Illuminate\Support\Str::limit($project->prd_content ?? '', 600, '...');
 
-                            // If old node_status format, derive lists
-                            if (empty($implemented) && empty($missing) && !empty($rj['node_status'])) {
-                                foreach ($rj['node_status'] as $node => $val) {
-                                    if ($val === true) $implemented[] = $node;
-                                    else $missing[] = $node;
+                            $promptLines   = [];
+                            $promptLines[] = "You are a senior software engineer. Fix ALL compliance issues in this codebase based on the audit report below.";
+                            $promptLines[] = "";
+                            $promptLines[] = "## Project: {$project->name}";
+                            $promptLines[] = "## Audit Summary: {$auditSummary}";
+                            $promptLines[] = "## PRD Excerpt:";
+                            $promptLines[] = $prdSnippet;
+                            $promptLines[] = "";
+                            $promptLines[] = "---";
+                            $promptLines[] = "## Issues To Fix:";
+                            $promptLines[] = "";
+
+                            if (!empty($auditPartial)) {
+                                $promptLines[] = "### ⚠ PARTIAL — Feature exists but does not fully match PRD:";
+                                foreach ($auditPartial as $feat) {
+                                    $label = ucwords(str_replace('_', ' ', $feat));
+                                    $r = $auditReviews[$feat] ?? null;
+                                    $promptLines[] = "";
+                                    $promptLines[] = "**{$label}**";
+                                    if ($r) {
+                                        if (!empty($r['found']))          $promptLines[] = "- Found: {$r['found']}";
+                                        if (!empty($r['issue']))          $promptLines[] = "- Issue: {$r['issue']}";
+                                        if (!empty($r['recommendation'])) $promptLines[] = "- Fix: {$r['recommendation']}";
+                                    }
                                 }
+                                $promptLines[] = "";
                             }
 
-                            // Build dynamic feature list from AI audit result
-                            $partial = $rj['partial'] ?? [];
-
-                            // Merge all features the AI detected (from any category)
-                            $allDetected = array_unique(array_merge($implemented, $partial, $missing));
-
-                            // Build $allFeatures as key => readable label (snake_case → Title Case)
-                            $allFeatures = [];
-                            foreach ($allDetected as $feat) {
-                                $allFeatures[$feat] = ucwords(str_replace('_', ' ', $feat));
-                            }
-
-                            // If no features detected yet, show a placeholder
-                            if (empty($allFeatures)) {
-                                $allFeatures = ['no_data' => 'No Audit Data'];
-                            }
-
-                            // Determine per-feature status
-                            $featureStatuses = [];
-                            foreach ($allFeatures as $key => $label) {
-                                if (in_array($key, $implemented)) {
-                                    $featureStatuses[$key] = 'implemented';
-                                } elseif (in_array($key, $partial)) {
-                                    $featureStatuses[$key] = 'partial';
-                                } elseif (in_array($key, $missing)) {
-                                    $featureStatuses[$key] = 'missing';
-                                } else {
-                                    $featureStatuses[$key] = 'unknown';
+                            if (!empty($auditMissing)) {
+                                $promptLines[] = "### ✗ MISSING — Feature not found in codebase at all:";
+                                foreach ($auditMissing as $feat) {
+                                    $label = ucwords(str_replace('_', ' ', $feat));
+                                    $r = $auditReviews[$feat] ?? null;
+                                    $promptLines[] = "";
+                                    $promptLines[] = "**{$label}**";
+                                    if ($r) {
+                                        if (!empty($r['issue']))          $promptLines[] = "- PRD requires: {$r['issue']}";
+                                        if (!empty($r['recommendation'])) $promptLines[] = "- Implementation: {$r['recommendation']}";
+                                        if (!empty($r['priority']))       $promptLines[] = "- Priority: {$r['priority']}";
+                                    } else {
+                                        $promptLines[] = "- This feature is completely missing. Implement it according to the PRD.";
+                                    }
                                 }
+                                $promptLines[] = "";
                             }
+
+                            if (!empty($rj_prompt['quality_notes'])) {
+                                $promptLines[] = "### 📋 General Quality Issues:";
+                                foreach ($rj_prompt['quality_notes'] as $note) {
+                                    $promptLines[] = "- {$note}";
+                                }
+                                $promptLines[] = "";
+                            }
+
+                            $promptLines[] = "---";
+                            $promptLines[] = "## Instructions:";
+                            $promptLines[] = "1. Fix ALL partial features to fully match PRD specification.";
+                            $promptLines[] = "2. Implement ALL missing features from scratch.";
+                            $promptLines[] = "3. Follow existing code style and architecture conventions.";
+                            $promptLines[] = "4. Add proper validation, error handling, and security where missing.";
+                            $promptLines[] = "5. Show the complete file content for each changed file.";
+
+                            $aiPrompt = implode("\n", $promptLines);
+                            $hasIssues = !empty($auditPartial) || !empty($auditMissing);
                         @endphp
 
-                        {{-- Feature Status Cards --}}
-                        <div class="grid grid-cols-1 gap-3">
-                            @foreach($allFeatures as $key => $label)
-                            @php
-                                $status = $featureStatuses[$key] ?? 'unknown';
-                                $review = $reviews[$key] ?? null;
-
-                                $colors = match($status) {
-                                    'implemented' => [
-                                        'border' => 'border-emerald-900/40',
-                                        'bg'     => 'bg-emerald-950/40',
-                                        'dot'    => 'bg-emerald-500',
-                                        'text'   => 'text-emerald-400',
-                                        'badge'  => 'bg-emerald-900/30 text-emerald-400 border-emerald-800/40',
-                                        'label'  => '✓ Terimplementasi',
-                                        'note'   => 'Fitur sudah ada dan sesuai dengan PRD.',
-                                        'detail_bg' => '',
-                                    ],
-                                    'partial' => [
-                                        'border' => 'border-yellow-900/40',
-                                        'bg'     => 'bg-yellow-950/40',
-                                        'dot'    => 'bg-yellow-500 animate-pulse',
-                                        'text'   => 'text-yellow-400',
-                                        'badge'  => 'bg-yellow-900/30 text-yellow-400 border-yellow-800/40',
-                                        'label'  => '⚠ Tidak Sesuai PRD',
-                                        'note'   => 'Fitur ada tapi belum sepenuhnya sesuai dengan spesifikasi PRD.',
-                                        'detail_bg' => 'bg-yellow-950/20 border-yellow-900/30',
-                                    ],
-                                    'missing' => [
-                                        'border' => 'border-red-900/40',
-                                        'bg'     => 'bg-red-950/40',
-                                        'dot'    => 'bg-red-500 animate-pulse',
-                                        'text'   => 'text-red-400',
-                                        'badge'  => 'bg-red-900/30 text-red-400 border-red-800/40',
-                                        'label'  => '✗ Belum Terimplementasi',
-                                        'note'   => 'Fitur ini belum ditemukan dalam kodebase.',
-                                        'detail_bg' => 'bg-red-950/20 border-red-900/30',
-                                    ],
-                                    default => [
-                                        'border' => 'border-gray-800/40',
-                                        'bg'     => 'bg-gray-900/20',
-                                        'dot'    => 'bg-gray-600',
-                                        'text'   => 'text-gray-400',
-                                        'badge'  => 'bg-gray-800/30 text-gray-400 border-gray-700/40',
-                                        'label'  => '? Tidak Diketahui',
-                                        'note'   => 'Belum ada data audit untuk fitur ini.',
-                                        'detail_bg' => '',
-                                    ],
-                                };
-
-                                $priority = $review['priority'] ?? null;
-                                $priorityBadge = match($priority) {
-                                    'high'   => 'bg-red-900/30 text-red-400 border-red-800/30',
-                                    'medium' => 'bg-yellow-900/30 text-yellow-400 border-yellow-800/30',
-                                    'low'    => 'bg-gray-800/30 text-gray-400 border-gray-700/30',
-                                    default  => '',
-                                };
-                            @endphp
-
-                            {{-- Card wrapper --}}
-                            <div class="rounded-lg border {{ $colors['border'] }} {{ $colors['bg'] }} overflow-hidden">
-                                {{-- Card header --}}
-                                <div class="flex items-center gap-3 px-4 py-3">
-                                    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0 {{ $colors['dot'] }}"></span>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="flex items-center justify-between gap-2">
-                                            <span class="text-sm font-medium text-gray-200">{{ $label }}</span>
-                                            <div class="flex items-center gap-1.5 flex-shrink-0">
-                                                @if($priority && $status !== 'implemented')
-                                                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded border {{ $priorityBadge }}">{{ strtoupper($priority) }}</span>
-                                                @endif
-                                                <span class="text-[10px] font-mono px-2 py-0.5 rounded border {{ $colors['badge'] }}">{{ $colors['label'] }}</span>
-                                            </div>
-                                        </div>
-                                    </div>
+                        @if($hasIssues)
+                        <div class="bg-[#161616] border border-[#2A2A2A] rounded-xl overflow-hidden shadow-sm flex flex-col">
+                            <div class="h-12 border-b border-[#2A2A2A] px-5 flex items-center justify-between bg-[#121212] flex-shrink-0">
+                                <div class="flex items-center gap-2 text-white font-medium">
+                                    <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                                    <span>Rekomendasi Prompt AI</span>
                                 </div>
-
-                                {{-- Detailed review panel — only for partial and missing --}}
-                                @if($review && $status !== 'implemented')
-                                <div class="border-t {{ $colors['border'] }} {{ $colors['detail_bg'] }} px-4 py-3 space-y-2.5">
-
-                                    {{-- What was found --}}
-                                    @if(!empty($review['found']))
-                                    <div class="flex gap-2.5">
-                                        <span class="text-[10px] font-bold font-mono text-gray-500 flex-shrink-0 mt-0.5 w-16">FOUND</span>
-                                        <p class="text-xs text-gray-400 leading-relaxed">{{ $review['found'] }}</p>
-                                    </div>
-                                    @endif
-
-                                    {{-- Issue description --}}
-                                    @if(!empty($review['issue']))
-                                    <div class="flex gap-2.5">
-                                        <span class="text-[10px] font-bold font-mono {{ $colors['text'] }} flex-shrink-0 mt-0.5 w-16">ISSUE</span>
-                                        <p class="text-xs {{ $colors['text'] }} leading-relaxed opacity-90">{{ $review['issue'] }}</p>
-                                    </div>
-                                    @endif
-
-                                    {{-- Recommendation --}}
-                                    @if(!empty($review['recommendation']))
-                                    <div class="flex gap-2.5 pt-1 border-t {{ $colors['border'] }}">
-                                        <span class="text-[10px] font-bold font-mono text-indigo-400 flex-shrink-0 mt-0.5 w-16">FIX</span>
-                                        <p class="text-xs text-indigo-300/80 leading-relaxed">{{ $review['recommendation'] }}</p>
-                                    </div>
-                                    @endif
-
-                                </div>
-                                @elseif($status === 'implemented')
-                                    {{-- Implemented: compact single-line note --}}
-                                @elseif($status !== 'implemented')
-                                    {{-- No review yet: show default note --}}
-                                    <div class="border-t {{ $colors['border'] }} px-4 py-2">
-                                        <p class="text-xs {{ $colors['text'] }} opacity-70">{{ $colors['note'] }}</p>
-                                    </div>
-                                @endif
+                                <button id="copy-prompt-btn" onclick="copyAiPrompt()"
+                                    class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-violet-600/80 hover:bg-violet-600 border border-violet-500/50 rounded-md transition-all">
+                                    <svg id="copy-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                    <svg id="check-icon" class="w-3.5 h-3.5 hidden text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    <span id="copy-btn-text">Copy</span>
+                                </button>
                             </div>
-                            @endforeach
-                        </div>
 
-                        {{-- Quality Notes --}}
-                        @if(!empty($qualityNotes))
-                        <div class="border border-indigo-900/30 bg-[#11121A] rounded-lg p-4 mt-1">
-                            <h4 class="text-xs font-semibold text-indigo-400 mb-2 flex items-center gap-1.5">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                                Catatan Kualitas Kode
-                            </h4>
-                            <ul class="space-y-1.5">
-                                @foreach($qualityNotes as $note)
-                                <li class="text-xs text-indigo-300/80 flex gap-2">
-                                    <span class="text-indigo-500 flex-shrink-0">›</span>
-                                    {{ $note }}
-                                </li>
-                                @endforeach
-                            </ul>
+                            {{-- Prompt Content --}}
+                            <div class="relative flex-1">
+                                <textarea id="ai-fix-prompt" readonly
+                                    class="w-full bg-[#0D0D0D] text-gray-300 text-[11px] font-mono leading-relaxed p-4 resize-none outline-none border-none focus:ring-0 custom-scrollbar"
+                                    style="min-height: 200px;"
+                                    onclick="this.select()">{{ $aiPrompt }}</textarea>
+                                <div class="pointer-events-none absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-[#0D0D0D] to-transparent"></div>
+                            </div>
                         </div>
                         @endif
-
-                        {{-- Audit Error --}}
-                        @if(isset($rj['error']))
-                        <div class="border border-yellow-900/30 bg-[#1A1A12] rounded-lg p-4">
-                            <h4 class="text-sm font-semibold text-yellow-400 mb-2">Audit Error</h4>
-                            <p class="text-xs text-yellow-300/80 font-mono">{{ $rj['error'] }}</p>
-                        </div>
-                        @endif
-
-                    @else
-                        <div class="flex flex-col items-center justify-center py-8 text-center">
-                            <svg class="w-10 h-10 mb-2 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-                            <p class="text-sm text-gray-500">No audit results yet.</p>
-                            <p class="text-xs text-gray-600 mt-1">Push code to GitHub to trigger an AI compliance audit.</p>
-                        </div>
                     @endif
+
+                    <!-- 2. Recent Commits -->
+                    <div class="bg-[#161616] border border-[#2A2A2A] rounded-xl flex flex-col overflow-hidden shadow-sm">
+                        <div class="h-12 border-b border-[#2A2A2A] px-5 flex items-center justify-between bg-[#121212]">
+                            <div class="flex items-center gap-2 text-white font-medium">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                                Recent Commits
+                            </div>
+                        </div>
+                        <div class="p-5 flex flex-col gap-4 bg-[#161616]">
+                            @forelse($project->audits->sortByDesc('created_at')->take(3) as $audit)
+                            <div class="flex gap-3">
+                                <div class="w-8 h-8 rounded-full bg-[#252525] border border-[#333] flex items-center justify-center flex-shrink-0">
+                                    @if($audit->status === 'complete')
+                                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                    @elseif($audit->status === 'partial')
+                                    <svg class="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01"></path></svg>
+                                    @else
+                                    <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    @endif
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex justify-between items-baseline mb-0.5">
+                                        <h4 class="text-sm font-medium text-gray-200 truncate font-mono">{{ substr($audit->commit_hash, 0, 10) }}</h4>
+                                        <span class="text-xs text-gray-500 flex-shrink-0">{{ $audit->created_at->diffForHumans() }}</span>
+                                    </div>
+                                    <p class="text-xs text-gray-400">Score: <span class="font-bold {{ $audit->score >= 80 ? 'text-emerald-400' : ($audit->score >= 50 ? 'text-yellow-400' : 'text-red-400') }}">{{ $audit->score }}%</span></p>
+                                </div>
+                            </div>
+                            @empty
+                            <p class="text-xs text-gray-500 text-center py-2">No audits yet.</p>
+                            @endforelse
+                        </div>
                     </div>
-                </div>
 
-            </div>
+                    <!-- 3. Feature Status Panel -->
+                    <div class="bg-[#161616] border border-[#2A2A2A] rounded-xl flex flex-col overflow-hidden shadow-sm">
+                        <div class="h-12 border-b border-[#2A2A2A] px-5 flex items-center gap-2 bg-[#121212]">
+                            <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                            <span class="text-white font-medium">Feature Status</span>
+                        </div>
+                        <div class="p-5 flex flex-col gap-3 overflow-auto max-h-[400px] custom-scrollbar bg-[#161616]">
+                            @if($latestAudit)
+                                @php
+                                    $rj_fs = $latestAudit->result_json ?? [];
+                                    $fs_implemented  = $rj_fs['implemented']   ?? [];
+                                    $fs_missing      = $rj_fs['missing']       ?? [];
+                                    $fs_partial      = $rj_fs['partial']       ?? [];
+                                    $fs_reviews      = $rj_fs['reviews']       ?? [];
 
-            {{-- ═══ AI Fix Prompt Panel (full-width below the 2-col grid) ═══ --}}
-            @if($latestAudit && !empty($rj) && !isset($rj['error']))
-            @php
-                /* Build the prompt from audit data */
-                $auditPartial  = $rj['partial']       ?? [];
-                $auditMissing  = $rj['missing']       ?? [];
-                $auditReviews  = $rj['reviews']       ?? [];
-                $auditSummary  = $rj['summary']       ?? '';
-                $prdSnippet    = Str::limit($project->prd_content ?? '', 600, '...');
+                                    if (empty($fs_implemented) && empty($fs_missing) && !empty($rj_fs['node_status'])) {
+                                        foreach ($rj_fs['node_status'] as $node => $val) {
+                                            if ($val === true) $fs_implemented[] = $node;
+                                            else $fs_missing[] = $node;
+                                        }
+                                    }
 
-                $promptLines   = [];
-                $promptLines[] = "You are a senior software engineer. Fix ALL compliance issues in this codebase based on the audit report below.";
-                $promptLines[] = "";
-                $promptLines[] = "## Project: {$project->name}";
-                $promptLines[] = "## Audit Summary: {$auditSummary}";
-                $promptLines[] = "## PRD Excerpt:";
-                $promptLines[] = $prdSnippet;
-                $promptLines[] = "";
-                $promptLines[] = "---";
-                $promptLines[] = "## Issues To Fix:";
-                $promptLines[] = "";
+                                    $allDetected = array_unique(array_merge($fs_implemented, $fs_partial, $fs_missing));
+                                    $allFeatures = [];
+                                    foreach ($allDetected as $feat) {
+                                        $allFeatures[$feat] = ucwords(str_replace('_', ' ', $feat));
+                                    }
+                                    if (empty($allFeatures)) { $allFeatures = ['no_data' => 'No Audit Data']; }
 
-                if (!empty($auditPartial)) {
-                    $promptLines[] = "### ⚠ PARTIAL — Feature exists but does not fully match PRD:";
-                    foreach ($auditPartial as $feat) {
-                        $label = ucwords(str_replace('_', ' ', $feat));
-                        $r = $auditReviews[$feat] ?? null;
-                        $promptLines[] = "";
-                        $promptLines[] = "**{$label}**";
-                        if ($r) {
-                            if (!empty($r['found']))          $promptLines[] = "- Found: {$r['found']}";
-                            if (!empty($r['issue']))          $promptLines[] = "- Issue: {$r['issue']}";
-                            if (!empty($r['recommendation'])) $promptLines[] = "- Fix: {$r['recommendation']}";
-                        }
-                    }
-                    $promptLines[] = "";
-                }
+                                    $featureStatuses = [];
+                                    foreach ($allFeatures as $key => $label) {
+                                        if (in_array($key, $fs_implemented)) $featureStatuses[$key] = 'implemented';
+                                        elseif (in_array($key, $fs_partial)) $featureStatuses[$key] = 'partial';
+                                        elseif (in_array($key, $fs_missing)) $featureStatuses[$key] = 'missing';
+                                        else $featureStatuses[$key] = 'unknown';
+                                    }
+                                @endphp
 
-                if (!empty($auditMissing)) {
-                    $promptLines[] = "### ✗ MISSING — Feature not found in codebase at all:";
-                    foreach ($auditMissing as $feat) {
-                        $label = ucwords(str_replace('_', ' ', $feat));
-                        $r = $auditReviews[$feat] ?? null;
-                        $promptLines[] = "";
-                        $promptLines[] = "**{$label}**";
-                        if ($r) {
-                            if (!empty($r['issue']))          $promptLines[] = "- PRD requires: {$r['issue']}";
-                            if (!empty($r['recommendation'])) $promptLines[] = "- Implementation: {$r['recommendation']}";
-                            if (!empty($r['priority']))       $promptLines[] = "- Priority: {$r['priority']}";
-                        } else {
-                            $promptLines[] = "- This feature is completely missing. Implement it according to the PRD.";
-                        }
-                    }
-                    $promptLines[] = "";
-                }
-
-                if (!empty($rj['quality_notes'])) {
-                    $promptLines[] = "### 📋 General Quality Issues:";
-                    foreach ($rj['quality_notes'] as $note) {
-                        $promptLines[] = "- {$note}";
-                    }
-                    $promptLines[] = "";
-                }
-
-                $promptLines[] = "---";
-                $promptLines[] = "## Instructions:";
-                $promptLines[] = "1. Fix ALL partial features to fully match PRD specification.";
-                $promptLines[] = "2. Implement ALL missing features from scratch.";
-                $promptLines[] = "3. Follow existing code style and architecture conventions.";
-                $promptLines[] = "4. Add proper validation, error handling, and security where missing.";
-                $promptLines[] = "5. Show the complete file content for each changed file.";
-
-                $aiPrompt = implode("\n", $promptLines);
-                $hasIssues = !empty($auditPartial) || !empty($auditMissing);
-            @endphp
-
-            @if($hasIssues)
-            <div class="bg-[#161616] border border-[#2A2A2A] rounded-xl overflow-hidden shadow-sm">
-                <div class="h-12 border-b border-[#2A2A2A] px-5 flex items-center justify-between bg-[#121212]">
-                    <div class="flex items-center gap-2 text-white font-medium">
-                        <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
-                        <span>Rekomendasi Prompt AI</span>
-                        <span class="text-[10px] font-mono text-gray-500">— Salin dan tempelkan ke AI assistant kamu untuk memperbaiki semua masalah</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="flex items-center gap-3 text-[10px] font-mono text-gray-500">
-                            @if(!empty($auditPartial))
-                            <span class="px-2 py-0.5 rounded border border-yellow-900/40 bg-yellow-950/30 text-yellow-400">{{ count($auditPartial) }} partial</span>
-                            @endif
-                            @if(!empty($auditMissing))
-                            <span class="px-2 py-0.5 rounded border border-red-900/40 bg-red-950/30 text-red-400">{{ count($auditMissing) }} missing</span>
+                                <div class="grid grid-cols-1 gap-3">
+                                    @foreach($allFeatures as $key => $label)
+                                    @php
+                                        $status = $featureStatuses[$key] ?? 'unknown';
+                                        $review = $fs_reviews[$key] ?? null;
+                                        $colors = match($status) {
+                                            'implemented' => [
+                                                'border' => 'border-emerald-900/40', 'bg' => 'bg-emerald-950/40', 'dot' => 'bg-emerald-500', 'text' => 'text-emerald-400',
+                                                'badge' => 'bg-emerald-900/30 text-emerald-400 border-emerald-800/40', 'label' => '✓'
+                                            ],
+                                            'partial' => [
+                                                'border' => 'border-yellow-900/40', 'bg' => 'bg-yellow-950/40', 'dot' => 'bg-yellow-500 animate-pulse', 'text' => 'text-yellow-400',
+                                                'badge' => 'bg-yellow-900/30 text-yellow-400 border-yellow-800/40', 'label' => '⚠'
+                                            ],
+                                            'missing' => [
+                                                'border' => 'border-red-900/40', 'bg' => 'bg-red-950/40', 'dot' => 'bg-red-500 animate-pulse', 'text' => 'text-red-400',
+                                                'badge' => 'bg-red-900/30 text-red-400 border-red-800/40', 'label' => '✗'
+                                            ],
+                                            default => [
+                                                'border' => 'border-gray-800/40', 'bg' => 'bg-gray-900/20', 'dot' => 'bg-gray-600', 'text' => 'text-gray-400',
+                                                'badge' => 'bg-gray-800/30 text-gray-400 border-gray-700/40', 'label' => '?'
+                                            ],
+                                        };
+                                    @endphp
+                                    <div class="rounded-lg border {{ $colors['border'] }} {{ $colors['bg'] }} p-3">
+                                        <div class="flex items-center justify-between gap-2 mb-1">
+                                            <div class="flex items-center gap-2 min-w-0">
+                                                <span class="w-2 h-2 rounded-full flex-shrink-0 {{ $colors['dot'] }}"></span>
+                                                <span class="text-xs font-medium text-gray-200 truncate">{{ $label }}</span>
+                                            </div>
+                                            <span class="text-[10px] font-bold {{ $colors['text'] }}">{{ $colors['label'] }}</span>
+                                        </div>
+                                        @if($review && $status !== 'implemented')
+                                            <p class="text-[10px] text-gray-400 line-clamp-2 leading-relaxed">{{ $review['issue'] ?? '' }}</p>
+                                        @endif
+                                    </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="flex flex-col items-center justify-center py-8 text-center">
+                                    <svg class="w-10 h-10 mb-2 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+                                    <p class="text-sm text-gray-500">No audit results yet.</p>
+                                </div>
                             @endif
                         </div>
-                        <button id="copy-prompt-btn" onclick="copyAiPrompt()"
-                            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-violet-600/80 hover:bg-violet-600 border border-violet-500/50 rounded-md transition-all">
-                            <svg id="copy-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                            <svg id="check-icon" class="w-3.5 h-3.5 hidden text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                            <span id="copy-btn-text">Copy Prompt</span>
-                        </button>
-                    </div>
-                </div>
-
-                {{-- Prompt Content --}}
-                <div class="relative">
-                    <textarea id="ai-fix-prompt" readonly
-                        class="w-full bg-[#0D0D0D] text-gray-300 text-xs font-mono leading-relaxed p-5 resize-none outline-none border-none focus:ring-0 custom-scrollbar"
-                        style="min-height: 340px; max-height: 520px;"
-                        onclick="this.select()">{{ $aiPrompt }}</textarea>
-
-                    {{-- Gradient fade at bottom --}}
-                    <div class="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-[#0D0D0D] to-transparent"></div>
-                </div>
-
-                {{-- Footer hint --}}
-                <div class="px-5 py-3 border-t border-[#2A2A2A] bg-[#111] flex items-center justify-between">
-                    <p class="text-[10px] text-gray-600">Prompt ini berisi konteks PRD, daftar masalah, dan instruksi lengkap untuk AI. Gunakan dengan ChatGPT, Claude, Gemini, atau AI lainnya.</p>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-mono text-gray-600">{{ number_format(strlen($aiPrompt)) }} chars</span>
                     </div>
                 </div>
             </div>
-            @endif
-            @endif
 
         </div>
     </div>
@@ -795,7 +640,8 @@
         }
 
         if (cmContainer) {
-            cmContainer.addEventListener('wheel', function(e) {
+            container = document.getElementById('cm-container');
+            container.addEventListener('wheel', function(e) {
                 e.preventDefault();
                 if (e.deltaY < 0) cmZoomIn();
                 else cmZoomOut();
