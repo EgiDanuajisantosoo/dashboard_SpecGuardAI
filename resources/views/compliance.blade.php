@@ -550,128 +550,194 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
 
-            // ── Data from PHP ──────────────────────────────────────────────
-            const implemented  = @json($latestAudit->result_json['implemented']  ?? []);
-            const missing      = @json($latestAudit->result_json['missing']      ?? []);
-            const qualityNotes = @json($latestAudit->result_json['quality_notes'] ?? []);
-            const nodeStatus   = @json($latestAudit->result_json['node_status']  ?? (object)[]);
+            // ── Data from PHP (all dynamic from AI output) ─────────────────
+            const implemented  = @json($latestAudit->result_json['implemented'] ?? []);
+            const partial      = @json($latestAudit->result_json['partial']     ?? []);
+            const missing      = @json($latestAudit->result_json['missing']     ?? []);
+            const nodeStatusOld= @json($latestAudit->result_json['node_status'] ?? (object)[]); // legacy support
 
-            // ── Keyword map: feature key → words that appear in flowchart node labels ─
-            const featureKeywords = {
-                registration : ['registr', 'daftar', 'register', 'signup', 'sign up', 'hash password', 'simpan data'],
-                login        : ['login', 'masuk', 'sign in', 'signin', 'cocok', 'email & password'],
-                session_guard: ['sesi', 'session', 'cek sesi', 'guard', 'belum login', 'token'],
-                home_page    : ['beranda', 'home', 'dashboard', 'selamat datang', 'welcome'],
-                logout       : ['logout', 'keluar', 'hapus sesi', 'clear session', 'signout'],
-                error_handling: ['error', 'salah', 'gagal', 'pesan', 'message', 'failed'],
+            // ── Color definitions ──────────────────────────────────────────
+            const colors = {
+                implemented : { fill: '#052e16', stroke: '#22c55e', strokeWidth: '2.5px', text: '#86efac' },
+                partial     : { fill: '#422006', stroke: '#f59e0b', strokeWidth: '2.5px', text: '#fde68a' },
+                missing     : { fill: '#3b0a0a', stroke: '#ef4444', strokeWidth: '2.5px', text: '#fca5a5' },
             };
 
-            // ── Determine per-feature status ───────────────────────────────
-            // Green = implemented, Yellow = implemented but quality issues, Red = missing
-            function getFeatureStatus(featKey) {
-                const isImpl    = implemented.includes(featKey);
-                const isMissing = missing.includes(featKey);
-                const noteStr   = qualityNotes.join(' ').toLowerCase();
-                const hasIssue  = isImpl && (
-                    noteStr.includes(featKey.replace('_', ' ')) ||
-                    noteStr.includes(featureKeywords[featKey]?.[0] ?? '@@')
-                );
+            /**
+             * Convert a snake_case / camelCase feature key to an array of searchable tokens.
+             * e.g. "user_registration" → ["user", "registration", "register", "registr", "user registration"]
+             */
+            function featureToTokens(key) {
+                const base  = key.toLowerCase().replace(/_/g, ' ');
+                const parts = key.toLowerCase().split('_').filter(p => p.length > 2);
+                const tokens = new Set([base, ...parts]);
 
-                if (isMissing)  return 'missing';
-                if (hasIssue)   return 'partial';
-                if (isImpl)     return 'implemented';
-                return 'unknown';
+                // Add common stemming shortcuts
+                const stemMap = {
+                    'registration' : ['register', 'registr', 'daftar', 'signup', 'sign up'],
+                    'register'     : ['registr', 'daftar', 'signup'],
+                    'login'        : ['masuk', 'sign in', 'signin', 'log in'],
+                    'logout'       : ['keluar', 'log out', 'signout', 'sign out', 'hapus sesi'],
+                    'session'      : ['sesi', 'token', 'session'],
+                    'session_guard': ['cek sesi', 'sesi', 'guard', 'auth', 'belum login'],
+                    'home'         : ['beranda', 'dashboard', 'welcome', 'selamat datang'],
+                    'home_page'    : ['beranda', 'halaman utama', 'welcome'],
+                    'password'     : ['kata sandi', 'hash', 'bcrypt'],
+                    'validation'   : ['validasi', 'valid', 'cek'],
+                    'error'        : ['gagal', 'salah', 'pesan error', 'failed'],
+                    'error_handling': ['error', 'gagal', 'salah'],
+                    'email'        : ['surel', 'email'],
+                    'user'         : ['pengguna', 'user'],
+                    'create'       : ['buat', 'create', 'tambah'],
+                    'redirect'     : ['redirect', 'alihkan', 'halaman'],
+                    'product'      : ['produk', 'barang'],
+                    'search'       : ['cari', 'search', 'temukan'],
+                    'payment'      : ['bayar', 'payment', 'pembayaran'],
+                    'cart'         : ['keranjang', 'cart'],
+                    'order'        : ['pesanan', 'order'],
+                    'profile'      : ['profil', 'akun'],
+                    'notification' : ['notif', 'pemberitahuan'],
+                    'upload'       : ['unggah', 'upload'],
+                    'report'       : ['laporan', 'report'],
+                    'role'         : ['peran', 'role', 'hak akses'],
+                    'permission'   : ['izin', 'permission', 'akses'],
+                    'admin'        : ['admin', 'administrator'],
+                    'dashboard'    : ['dashboard', 'beranda'],
+                    'api'          : ['api', 'endpoint', 'request'],
+                    'token'        : ['token', 'jwt', 'bearer'],
+                };
+
+                // Apply stem expansions for each part
+                for (const part of parts) {
+                    if (stemMap[part]) stemMap[part].forEach(t => tokens.add(t));
+                }
+                // Apply for full key
+                if (stemMap[key]) stemMap[key].forEach(t => tokens.add(t));
+
+                return Array.from(tokens).filter(t => t.length >= 3);
             }
 
-            // ── Build a flat label→status lookup for fast node matching ────
+            // ── Build labelStatusMap: token → status ──────────────────────
+            // Priority: missing > partial > implemented (higher severity wins on conflict)
             const labelStatusMap = {};
 
-            // From new format: implemented/missing arrays
-            for (const [featKey, keywords] of Object.entries(featureKeywords)) {
-                const status = getFeatureStatus(featKey);
-                for (const kw of keywords) {
-                    labelStatusMap[kw.toLowerCase()] = status;
+            function addTokens(featureList, status) {
+                for (const featKey of featureList) {
+                    const tokens = featureToTokens(featKey);
+                    for (const tok of tokens) {
+                        // Only overwrite if new status has higher severity
+                        const existing = labelStatusMap[tok];
+                        const severity = { missing: 3, partial: 2, implemented: 1 };
+                        if (!existing || severity[status] > severity[existing]) {
+                            labelStatusMap[tok] = status;
+                        }
+                    }
                 }
             }
 
-            // From old format: node_status object (individual node labels)
-            for (const [label, isOk] of Object.entries(nodeStatus)) {
-                labelStatusMap[label.toLowerCase()] = isOk ? 'implemented' : 'missing';
+            // Add in priority order (lowest priority first, higher overwrites)
+            addTokens(implemented, 'implemented');
+            addTokens(partial,     'partial');
+            addTokens(missing,     'missing');
+
+            // Legacy node_status support
+            for (const [label, isOk] of Object.entries(nodeStatusOld)) {
+                const tok = label.toLowerCase();
+                labelStatusMap[tok] = isOk ? 'implemented' : 'missing';
             }
 
-            // ── Color definitions ─────────────────────────────────────────
-            const colors = {
-                implemented : { fill: '#064e3b', stroke: '#10b981', strokeWidth: '2px', text: '#6ee7b7' },
-                partial     : { fill: '#451a03', stroke: '#f59e0b', strokeWidth: '2px', text: '#fcd34d' },
-                missing     : { fill: '#450a0a', stroke: '#ef4444', strokeWidth: '2px', text: '#fca5a5' },
-                unknown     : null,
-            };
-
             // ── Apply colors to SVG nodes ─────────────────────────────────
+            function getNodeText(nodeEl) {
+                // Mermaid v11 renders labels in <span> inside <foreignObject>
+                const fo = nodeEl.querySelector('foreignObject');
+                if (fo) return fo.textContent.trim().toLowerCase();
+                // Fallback: <text> elements
+                return Array.from(nodeEl.querySelectorAll('text'))
+                    .map(t => t.textContent).join(' ').trim().toLowerCase();
+            }
+
+            function matchNodeStatus(nodeText) {
+                if (!nodeText) return null;
+
+                // Pass 1: exact substring match with longest token wins
+                let bestStatus  = null;
+                let bestLen     = 0;
+                for (const [tok, status] of Object.entries(labelStatusMap)) {
+                    if (nodeText.includes(tok) && tok.length > bestLen) {
+                        bestStatus = status;
+                        bestLen    = tok.length;
+                    }
+                }
+                if (bestStatus) return bestStatus;
+
+                // Pass 2: reverse check — does the token contain words from node text?
+                const nodeWords = nodeText.split(/[\s\/,&]+/).filter(w => w.length > 2);
+                for (const word of nodeWords) {
+                    for (const [tok, status] of Object.entries(labelStatusMap)) {
+                        if (tok.includes(word) && word.length >= 4) {
+                            return status;
+                        }
+                    }
+                }
+
+                return null;
+            }
+
             function applyColors() {
                 const container = document.getElementById('compliance-mermaid');
                 if (!container) return;
-
                 const svg = container.querySelector('svg');
-                if (!svg) { setTimeout(applyColors, 400); return; }
-
+                if (!svg) { setTimeout(applyColors, 300); return; }
                 const allNodes = svg.querySelectorAll('.node');
-                if (allNodes.length === 0) { setTimeout(applyColors, 400); return; }
+                if (allNodes.length === 0) { setTimeout(applyColors, 300); return; }
 
                 allNodes.forEach(nodeEl => {
-                    // Get the visible text inside this SVG node
-                    const spans = nodeEl.querySelectorAll('span, p, div, foreignObject');
-                    let nodeText = '';
-                    if (spans.length > 0) {
-                        nodeText = spans[0].textContent.trim().toLowerCase();
-                    } else {
-                        const textEls = nodeEl.querySelectorAll('text');
-                        nodeText = Array.from(textEls).map(t => t.textContent).join(' ').trim().toLowerCase();
-                    }
-
-                    if (!nodeText) return;
-
-                    // Find best matching status
-                    let matchedStatus = null;
-                    let bestMatchLen = 0;
-                    for (const [kw, status] of Object.entries(labelStatusMap)) {
-                        if (nodeText.includes(kw) && kw.length > bestMatchLen) {
-                            matchedStatus = status;
-                            bestMatchLen = kw.length;
-                        }
-                    }
-
+                    const nodeText     = getNodeText(nodeEl);
+                    const matchedStatus= matchNodeStatus(nodeText);
                     if (!matchedStatus || !colors[matchedStatus]) return;
 
                     const c = colors[matchedStatus];
 
-                    // Color all shape elements inside the node
-                    const shapes = nodeEl.querySelectorAll('rect, circle, polygon, ellipse, path');
-                    shapes.forEach(shape => {
-                        // Skip arrow paths (they have no fill or marker-end)
-                        if (shape.getAttribute('marker-end')) return;
+                    // Color shape backgrounds
+                    nodeEl.querySelectorAll('rect, circle, polygon, ellipse').forEach(shape => {
                         shape.style.fill        = c.fill;
                         shape.style.stroke      = c.stroke;
                         shape.style.strokeWidth = c.strokeWidth;
-                        shape.style.transition  = 'all 0.4s ease';
+                        shape.style.transition  = 'all 0.3s ease';
                     });
 
-                    // Color text inside the node
-                    const textEls = nodeEl.querySelectorAll('span, text, p, div');
-                    textEls.forEach(t => {
+                    // Color path elements that are NOT arrows
+                    nodeEl.querySelectorAll('path').forEach(p => {
+                        if (p.getAttribute('marker-end')) return; // skip arrows
+                        p.style.fill        = c.fill;
+                        p.style.stroke      = c.stroke;
+                        p.style.strokeWidth = c.strokeWidth;
+                        p.style.transition  = 'all 0.3s ease';
+                    });
+
+                    // Color text
+                    nodeEl.querySelectorAll('span, text, p, div, label').forEach(t => {
                         t.style.color = c.text;
                         t.style.fill  = c.text;
                     });
                 });
             }
 
-            // Run after Mermaid renders (it uses requestAnimationFrame internally)
-            setTimeout(applyColors, 900);
-            // Retry once more in case of slow render
-            setTimeout(applyColors, 2000);
+            // Retry strategy: Mermaid renders asynchronously
+            [600, 1200, 2500, 4000].forEach(delay => setTimeout(applyColors, delay));
+
+            // Also re-color after Mermaid fires its own render event
+            if (typeof mermaid !== 'undefined') {
+                mermaid.parseError = function() {};
+                // Watch for SVG insertion via MutationObserver
+                const mo = new MutationObserver(() => { applyColors(); });
+                const cmEl = document.getElementById('compliance-mermaid');
+                if (cmEl) mo.observe(cmEl, { childList: true, subtree: true });
+            }
         });
     </script>
     @endif
+
 
     <!-- Scale up SVG nodes after Mermaid renders -->
     <script>
