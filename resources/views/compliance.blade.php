@@ -174,35 +174,36 @@
                             $prdSnippet    = \Illuminate\Support\Str::limit($project->prd_content ?? '', 600, '...');
 
                             $promptLines   = [];
-                            $promptLines[] = "You are a senior software engineer. Fix ALL compliance issues in this codebase based on the audit report below.";
+                            $promptLines[] = "Act as a Senior Software Engineer. Your task is to fix all unresolved issues in the {$project->name} project based on the following audit results.";
                             $promptLines[] = "";
-                            $promptLines[] = "## Project: {$project->name}";
                             $promptLines[] = "## Audit Summary: {$auditSummary}";
-                            $promptLines[] = "## PRD Excerpt:";
+                            $promptLines[] = "## PRD Excerpt (Product Requirements):";
                             $promptLines[] = $prdSnippet;
                             $promptLines[] = "";
                             $promptLines[] = "---";
-                            $promptLines[] = "## Issues To Fix:";
+                            $promptLines[] = "## Unresolved Issues:";
                             $promptLines[] = "";
 
                             if (!empty($auditPartial)) {
-                                $promptLines[] = "### ⚠ PARTIAL — Feature exists but does not fully match PRD:";
+                                $promptLines[] = "### ⚠ PARTIAL IMPLEMENTATION (Has issues or does not match PRD):";
                                 foreach ($auditPartial as $feat) {
                                     $label = ucwords(str_replace('_', ' ', $feat));
                                     $r = $auditReviews[$feat] ?? null;
                                     $promptLines[] = "";
                                     $promptLines[] = "**{$label}**";
                                     if ($r) {
-                                        if (!empty($r['found']))          $promptLines[] = "- Found: {$r['found']}";
+                                        if (!empty($r['found']))          $promptLines[] = "- Current code: {$r['found']}";
                                         if (!empty($r['issue']))          $promptLines[] = "- Issue: {$r['issue']}";
-                                        if (!empty($r['recommendation'])) $promptLines[] = "- Fix: {$r['recommendation']}";
+                                        if (!empty($r['recommendation'])) $promptLines[] = "- Recommended fix: {$r['recommendation']}";
+                                    } else {
+                                        $promptLines[] = "- This feature exists but does not fully comply with the PRD specifications. Please fix it.";
                                     }
                                 }
                                 $promptLines[] = "";
                             }
 
                             if (!empty($auditMissing)) {
-                                $promptLines[] = "### ✗ MISSING — Feature not found in codebase at all:";
+                                $promptLines[] = "### ✗ NOT IMPLEMENTED (Feature not found in codebase):";
                                 foreach ($auditMissing as $feat) {
                                     $label = ucwords(str_replace('_', ' ', $feat));
                                     $r = $auditReviews[$feat] ?? null;
@@ -210,17 +211,16 @@
                                     $promptLines[] = "**{$label}**";
                                     if ($r) {
                                         if (!empty($r['issue']))          $promptLines[] = "- PRD requires: {$r['issue']}";
-                                        if (!empty($r['recommendation'])) $promptLines[] = "- Implementation: {$r['recommendation']}";
-                                        if (!empty($r['priority']))       $promptLines[] = "- Priority: {$r['priority']}";
+                                        if (!empty($r['recommendation'])) $promptLines[] = "- Implementation instruction: {$r['recommendation']}";
                                     } else {
-                                        $promptLines[] = "- This feature is completely missing. Implement it according to the PRD.";
+                                        $promptLines[] = "- This feature is completely missing. Implement this feature according to the PRD.";
                                     }
                                 }
                                 $promptLines[] = "";
                             }
 
                             if (!empty($rj_prompt['quality_notes'])) {
-                                $promptLines[] = "### 📋 General Quality Issues:";
+                                $promptLines[] = "### 📋 Code Quality Issues (Quality Notes):";
                                 foreach ($rj_prompt['quality_notes'] as $note) {
                                     $promptLines[] = "- {$note}";
                                 }
@@ -228,15 +228,15 @@
                             }
 
                             $promptLines[] = "---";
-                            $promptLines[] = "## Instructions:";
-                            $promptLines[] = "1. Fix ALL partial features to fully match PRD specification.";
-                            $promptLines[] = "2. Implement ALL missing features from scratch.";
-                            $promptLines[] = "3. Follow existing code style and architecture conventions.";
-                            $promptLines[] = "4. Add proper validation, error handling, and security where missing.";
-                            $promptLines[] = "5. Show the complete file content for each changed file.";
+                            $promptLines[] = "## Instructions for AI:";
+                            $promptLines[] = "1. Fix all features with 'Partial Implementation' status to be 100% compliant with the PRD.";
+                            $promptLines[] = "2. Create and implement all 'Not Implemented' features from scratch.";
+                            $promptLines[] = "3. Follow the existing structure, code style, and architecture conventions.";
+                            $promptLines[] = "4. Add validation, error handling, and security measures where necessary.";
+                            $promptLines[] = "5. Provide the complete code (full code) for every modified or created file.";
 
                             $aiPrompt = implode("\n", $promptLines);
-                            $hasIssues = !empty($auditPartial) || !empty($auditMissing);
+                            $hasIssues = !empty($auditPartial) || !empty($auditMissing) || !empty($rj_prompt['quality_notes']);
                         @endphp
 
                         @if($hasIssues)

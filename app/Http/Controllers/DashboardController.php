@@ -42,7 +42,7 @@ class DashboardController extends Controller
     {
         $projectId = $request->query('project');
         $project = null;
-        
+
         if ($projectId) {
             $project = Project::find($projectId);
         } else {
@@ -85,11 +85,22 @@ class DashboardController extends Controller
         ]);
 
         try {
+            // 1. Extract requirements first to sync with flowchart
+            $requirements = $this->extractRequirements($request->raw_text);
+            $reqString = "";
+            foreach ($requirements as $index => $req) {
+                $reqString .= ($index + 1) . ". " . $req['title'] . ": " . $req['description'] . "\n";
+            }
+
+            // 2. Generate Mermaid using PRD + extracted Requirements
             $response = \OpenAI\Laravel\Facades\OpenAI::chat()->create([
                 'model'    => env('OPENAI_MODEL', 'gpt-4o-mini'),
                 'messages' => [
                     ['role' => 'system', 'content' => $this->getMermaidSystemPrompt()],
-                    ['role' => 'user',   'content' => $request->raw_text],
+                    [
+                        'role' => 'user',
+                        'content' => "PRD CONTENT:\n" . $request->raw_text . "\n\nCORE REQUIREMENTS (MUST SYNC):\n" . $reqString
+                    ],
                 ],
                 'max_tokens' => 2500,
             ]);
@@ -98,9 +109,6 @@ class DashboardController extends Controller
 
             // Sanitize the Mermaid code before saving
             $mermaidCode = $this->sanitizeMermaid($mermaidCode);
-
-            // Extract key requirements from PRD in background (non-blocking)
-            $requirements = $this->extractRequirements($request->raw_text);
 
             $project = Project::create([
                 'name'             => $request->project_area,
@@ -191,11 +199,16 @@ class DashboardController extends Controller
         return <<<SYSTEM
 You are an expert system architect and software engineer. Your task is to convert a PRD (Product Requirements Document) into a valid, professional Mermaid.js flowchart that adheres to universal software engineering standards.
 
+=== SYNC REQUIREMENT (CRITICAL) ===
+You will be provided with a list of "Core Requirements" (Acceptance Criteria). 
+Every single requirement listed MUST be represented as at least one node or a clear path in the flowchart. 
+Ensure the flowchart is 100% synchronized with these requirements.
+
 === OUTPUT RULES (MANDATORY) ===
 1. Output ONLY raw Mermaid code. NO markdown fences (```), NO explanation, NO comments.
 2. First line MUST be: graph TD  OR  graph LR  (choose based on complexity; LR for simple linear flows, TD for branching).
 3. Arrow syntax: A -->|label| B   NEVER use A -->|label|> B
-4. Max 15 nodes. Modularize; do not cram everything into one giant diagram.
+4. Max 20 nodes. modularize but ensure completeness.
 5. All subgraphs must be closed with "end".
 
 === UNIVERSAL FLOWCHART STANDARDS ===
@@ -244,6 +257,7 @@ graph LR
     H --> I([End])
 
 === CHECKLIST BEFORE OUTPUT ===
+✓ ALL provided "Core Requirements" are represented in the nodes
 ✓ Has Start and End nodes
 ✓ All decisions are YES/NO questions
 ✓ All processes are action verbs
@@ -296,7 +310,6 @@ EXAMPLE: [{"title":"User Registration","description":"Users can register with em
 
             $parsed = json_decode($content, true);
             return is_array($parsed) ? array_slice($parsed, 0, 8) : [];
-
         } catch (\Exception) {
             return [];
         }
@@ -314,6 +327,18 @@ EXAMPLE: [{"title":"User Registration","description":"Users can register with em
         }
 
         try {
+            // 1. Ensure requirements are extracted
+            $requirements = $project->prd_requirements;
+            if (empty($requirements)) {
+                $requirements = $this->extractRequirements($project->prd_content);
+            }
+
+            $reqString = "";
+            foreach ($requirements as $index => $req) {
+                $reqString .= ($index + 1) . ". " . $req['title'] . ": " . $req['description'] . "\n";
+            }
+
+            // 2. Generate Mermaid using PRD + extracted Requirements
             $apiKey   = env('OPENAI_API_KEY');
             $model    = env('OPENAI_MODEL', 'llama-3.3-70b-versatile');
             $baseUrl  = rtrim(env('OPENAI_BASE_URL', 'https://api.groq.com/openai/v1'), '/');
@@ -324,7 +349,10 @@ EXAMPLE: [{"title":"User Registration","description":"Users can register with em
                     'model'       => $model,
                     'messages'    => [
                         ['role' => 'system', 'content' => $this->getMermaidSystemPrompt()],
-                        ['role' => 'user',   'content' => substr($project->prd_content, 0, 3000)],
+                        [
+                            'role' => 'user',
+                            'content' => "PRD CONTENT:\n" . substr($project->prd_content, 0, 3000) . "\n\nCORE REQUIREMENTS (MUST SYNC):\n" . $reqString
+                        ],
                     ],
                     'max_tokens'  => 2000,
                     'temperature' => 0.3,
@@ -343,18 +371,14 @@ EXAMPLE: [{"title":"User Registration","description":"Users can register with em
             // Sanitize: strip fences, fix & chars, remove orphan end, dedupe arrows
             $mermaidCode = $this->sanitizeMermaid($mermaidCode);
 
-            // Also re-extract requirements
-            $requirements = $this->extractRequirements($project->prd_content);
-
             $project->update([
                 'spec_content'     => $mermaidCode,
-                'prd_requirements' => empty($requirements) ? $project->prd_requirements : $requirements,
+                'prd_requirements' => $requirements, // update in case it was empty
             ]);
 
             return redirect()
                 ->route('openspec', ['project' => $project->id])
                 ->with('success', 'Spec & Requirements berhasil di-regenerate dari PRD.');
-
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Regenerate failed', [
                 'project_id' => $project->id,
