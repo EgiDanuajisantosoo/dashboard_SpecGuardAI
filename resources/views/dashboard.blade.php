@@ -15,12 +15,12 @@
                 <span class="text-xs text-gray-500 font-medium tracking-wide uppercase">Status: Draft</span>
             </div>
         </div>
-        <div class="flex items-center gap-4">
+        <!-- <div class="flex items-center gap-4">
             <button class="text-gray-400 hover:text-white transition-colors relative">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
             </button>
             <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 border border-[#333] ml-2"></div>
-        </div>
+        </div> -->
     </header>
 
     <!-- Main Workspace -->
@@ -59,7 +59,7 @@
                     <div class="flex items-center justify-between px-4 border-b border-[#2A2A2A] h-11 bg-[#121212]">
                         <div class="flex items-center gap-6 h-full">
                             <button id="tab-raw-text" onclick="switchTab('raw-text')" class="text-gray-300 text-sm font-medium border-b-2 border-gray-400 h-full pt-[2px] transition-colors">Raw Text</button>
-                            <button id="tab-file-upload" onclick="switchTab('file-upload')" class="text-gray-500 hover:text-gray-300 text-sm font-medium border-b-2 border-transparent h-full pt-[2px] transition-colors">File Upload</button>
+                            <!-- <button id="tab-file-upload" onclick="switchTab('file-upload')" class="text-gray-500 hover:text-gray-300 text-sm font-medium border-b-2 border-transparent h-full pt-[2px] transition-colors">File Upload</button> -->
                         </div>
                         <div class="flex items-center gap-1.5 text-gray-500">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
@@ -88,7 +88,7 @@
                     <!-- Editor Footer / Actions -->
                     <div class="p-3 border-t border-[#2A2A2A] bg-[#121212] flex items-center justify-between">
                         <div class="flex flex-col gap-1">
-                            <span class="text-[10px] text-gray-500 font-bold tracking-wider uppercase">Template</span>
+                            <!-- <span class="text-[10px] text-gray-500 font-bold tracking-wider uppercase">Template</span>
                             <div class="relative">
                                 <select class="appearance-none w-32 bg-[#252525] border border-[#333] text-gray-300 text-sm rounded px-3 py-1.5 focus:outline-none focus:border-gray-500 cursor-pointer">
                                     <option>Standard</option>
@@ -98,7 +98,7 @@
                                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </div>
-                            </div>
+                            </div> -->
                         </div>
                         <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-5 py-2 rounded-md shadow-sm transition-all focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-[#121212] inline-block">
                             Generate OpenSpec
