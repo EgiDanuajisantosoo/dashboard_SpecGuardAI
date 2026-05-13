@@ -19,9 +19,9 @@
                 <svg class="w-4 h-4 {{ request()->is('/') ? 'text-indigo-400' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 1. PRD & Specification
             </a>
-            <a href="/openspec" class="flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium {{ request()->is('openspec') ? 'bg-[#252525] text-white border border-[#333]/50' : 'text-gray-400 hover:text-white hover:bg-[#1A1A1A]' }}">
-                <svg class="w-4 h-4 {{ request()->is('openspec') ? 'text-indigo-400' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
-                2. OpenSpec Editor
+            <a href="/mermaid-previewer" class="flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium {{ request()->is('mermaid-previewer') ? 'bg-[#252525] text-white border border-[#333]/50' : 'text-gray-400 hover:text-white hover:bg-[#1A1A1A]' }}">
+                <svg class="w-4 h-4 {{ request()->is('mermaid-previewer') ? 'text-indigo-400' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                2. Mermaid Previewer
             </a>
             <a href="/compliance" class="flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm font-medium {{ request()->is('compliance') ? 'bg-[#252525] text-white border border-[#333]/50' : 'text-gray-400 hover:text-white hover:bg-[#1A1A1A]' }}">
                 <svg class="w-4 h-4 {{ request()->is('compliance') ? 'text-emerald-400' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>

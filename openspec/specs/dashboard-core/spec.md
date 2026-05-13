@@ -2,11 +2,13 @@
 
 ## Purpose
 TBD - created by archiving change core-system. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Dashboard Overview and Mermaid JS
-Sistem SHALL menyediakan view `/dashboard` yang menampilkan daftar menyeluruh semua proyek, menyorot compliance score terakhir masing-masing proyek, dan menginjeksikan data node_status JSON ke dalam skrip Mermaid.js untuk diagram visual.
+Sistem SHALL menyediakan view `/` (sebagai dashboard PRD input) yang memungkinkan pengguna mengirim PRD, dan memisahkan tampilan visual Mermaid.js ke halaman khusus Live Audit Board (`/compliance`) serta Mermaid Previewer ke halaman `/mermaid-previewer`.
 
 #### Scenario: User opens the dashboard
-- **WHEN** pengguna login atau membuka root `/dashboard`
-- **THEN** sistem meng-query data proyek beserta nilai audit terbarunya dan menampilkan status compliance di antarmuka grafis
-
+- **WHEN** pengguna login atau membuka root `/`
+- **THEN** sistem menampilkan form input PRD dan daftar proyek terbaru dari database
+- **THEN** sistem tidak lagi merender grafik Mermaid di halaman root ini melainkan mendelegasikannya ke halaman terpisah

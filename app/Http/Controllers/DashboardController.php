@@ -50,7 +50,7 @@ class DashboardController extends Controller
             $project = Project::latest()->first();
         }
 
-        return view('openspec', ['project' => $project]);
+        return view('mermaid-previewer', ['project' => $project]);
     }
 
     public function compliance(\Illuminate\Http\Request $request)

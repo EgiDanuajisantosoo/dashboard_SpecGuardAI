@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="title">OpenSpec Review - SpecGuard AI</x-slot>
+    <x-slot name="title">Mermaid Previewer - SpecGuard AI</x-slot>
 
     <!-- Top Navbar -->
     <header class="h-16 border-b border-[#2A2A2A] flex items-center justify-between px-8 flex-shrink-0 bg-[#121212]/80 backdrop-blur-md sticky top-0 z-10">
@@ -40,7 +40,7 @@
                         {{ $project ? $project->name . '.mermaid' : 'flowchart.mermaid' }}
                         <span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border border-[#333] bg-[#252525] text-gray-400">v1.2.4</span>
                     </h2>
-                    <p class="text-gray-400 text-sm">Generated OpenSpec structure ready for review.</p>
+                    <p class="text-gray-400 text-sm">Review the generated Mermaid flow diagram for your project.</p>
                 </div>
                 <div class="flex gap-3">
                     @if($project)

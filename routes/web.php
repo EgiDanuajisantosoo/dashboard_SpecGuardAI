@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 Route::post('/project/generate', [DashboardController::class, 'generate'])->name('project.generate');
 Route::post('/project/{project}/regenerate', [DashboardController::class, 'regenerate'])->name('project.regenerate');
-Route::get('/openspec', [DashboardController::class, 'openspec'])->name('openspec');
+Route::get('/mermaid-previewer', [DashboardController::class, 'openspec'])->name('openspec');
 
 Route::get('/project/{project}', [DashboardController::class, 'show'])->name('project.show');
 Route::get('/api/project/{project}/audits', [DashboardController::class, 'audits'])->name('api.project.audits');
