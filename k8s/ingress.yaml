@@ -1,0 +1,28 @@
+# =============================================================================
+# SpecGuard AI — Ingress
+# Routes external traffic to Laravel dashboard
+# Requires: nginx ingress controller
+#   minikube: minikube addons enable ingress
+#   kind:     kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+# =============================================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: specguard-ingress
+  namespace: specguard
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: specguard.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: laravel
+                port:
+                  number: 8080

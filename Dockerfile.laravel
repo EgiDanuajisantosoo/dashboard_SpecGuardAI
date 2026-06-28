@@ -1,0 +1,87 @@
+# =============================================================================
+# SpecGuard AI — Laravel Dockerfile
+# Multi-stage build: composer → node → runtime (php-fpm + nginx)
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Stage 1: Install PHP dependencies
+# ---------------------------------------------------------------------------
+FROM composer:2 AS vendor
+
+WORKDIR /app
+
+COPY composer.json composer.lock ./
+RUN composer install \
+    --no-dev \
+    --no-scripts \
+    --no-autoloader \
+    --prefer-dist \
+    --ignore-platform-reqs
+
+COPY . .
+RUN composer dump-autoload --optimize --no-dev
+
+# ---------------------------------------------------------------------------
+# Stage 2: Build frontend assets (Vite + Tailwind v4)
+# ---------------------------------------------------------------------------
+FROM node:20-alpine AS assets
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copy full source — Tailwind v4 scans blade templates for class usage
+COPY . .
+RUN npm run build
+
+# ---------------------------------------------------------------------------
+# Stage 3: Production runtime
+# ---------------------------------------------------------------------------
+FROM php:8.2-fpm-alpine AS runtime
+
+# Install system dependencies + PHP extensions
+RUN apk add --no-cache \
+        nginx \
+        supervisor \
+        postgresql-dev \
+        libpq \
+        $PHPIZE_DEPS \
+    && docker-php-ext-install \
+        pdo_pgsql \
+        pcntl \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apk del $PHPIZE_DEPS \
+    && rm -rf /tmp/pear \
+    && mkdir -p /run/nginx /var/log/supervisor
+
+WORKDIR /var/www/html
+
+# Copy application with PHP dependencies from vendor stage
+COPY --from=vendor /app .
+
+# Copy compiled frontend assets from assets stage
+COPY --from=assets /app/public/build ./public/build
+
+# Copy Docker-specific config
+COPY docker/laravel/nginx.conf /etc/nginx/http.d/default.conf
+COPY docker/laravel/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/laravel/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Create .env placeholder (actual values injected via docker-compose env_file)
+RUN touch .env
+
+# Fix storage permissions
+RUN mkdir -p storage/logs \
+        storage/framework/cache \
+        storage/framework/sessions \
+        storage/framework/views \
+        bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
+EXPOSE 8080
+
+ENTRYPOINT ["/entrypoint.sh"]

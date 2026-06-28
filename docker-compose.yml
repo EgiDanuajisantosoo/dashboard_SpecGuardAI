@@ -1,0 +1,104 @@
+# =============================================================================
+# SpecGuard AI — Docker Compose
+# Services: laravel, laravel-worker, postgres, redis
+# Usage:   docker compose up -d --build
+# =============================================================================
+
+services:
+  # -------------------------------------------------------------------------
+  # PostgreSQL 16
+  # -------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: specguard-postgres
+    environment:
+      POSTGRES_DB: specguard
+      POSTGRES_USER: specguard
+      POSTGRES_PASSWORD: specguard_secret
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U specguard -d specguard"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - specguard-net
+
+  # -------------------------------------------------------------------------
+  # Redis 7
+  # -------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: specguard-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - specguard-net
+
+  # -------------------------------------------------------------------------
+  # Laravel Web (dashboard + webhook API + AI service layer)
+  # -------------------------------------------------------------------------
+  laravel:
+    build:
+      context: .
+      dockerfile: Dockerfile.laravel
+    container_name: specguard-laravel
+    ports:
+      - "8080:8080"
+    env_file: .env.docker
+    environment:
+      CONTAINER_ROLE: web
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - specguard-net
+
+  # -------------------------------------------------------------------------
+  # Laravel Queue Worker (Redis-backed)
+  # -------------------------------------------------------------------------
+  laravel-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.laravel
+    container_name: specguard-worker
+    env_file: .env.docker
+    environment:
+      CONTAINER_ROLE: worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      laravel:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - specguard-net
+
+# =============================================================================
+# Volumes & Networks
+# =============================================================================
+volumes:
+  pgdata:
+    driver: local
+
+networks:
+  specguard-net:
+    driver: bridge

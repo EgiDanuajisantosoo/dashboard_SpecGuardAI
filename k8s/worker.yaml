@@ -1,0 +1,43 @@
+# =============================================================================
+# SpecGuard AI — Laravel Queue Worker (Deployment)
+# Scalable: kubectl scale deployment laravel-worker -n specguard --replicas=2
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: laravel-worker
+  namespace: specguard
+  labels:
+    app: laravel
+    role: worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: laravel
+      role: worker
+  template:
+    metadata:
+      labels:
+        app: laravel
+        role: worker
+    spec:
+      containers:
+        - name: laravel-worker
+          image: dashboard_specguardai-laravel:latest
+          imagePullPolicy: Never
+          envFrom:
+            - configMapRef:
+                name: specguard-config
+            - secretRef:
+                name: specguard-secrets
+          env:
+            - name: CONTAINER_ROLE
+              value: "worker"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

@@ -1,0 +1,72 @@
+# =============================================================================
+# SpecGuard AI — Laravel Web (Deployment + Service)
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: laravel
+  namespace: specguard
+  labels:
+    app: laravel
+    role: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: laravel
+      role: web
+  template:
+    metadata:
+      labels:
+        app: laravel
+        role: web
+    spec:
+      containers:
+        - name: laravel
+          image: dashboard_specguardai-laravel:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: specguard-config
+            - secretRef:
+                name: specguard-secrets
+          env:
+            - name: CONTAINER_ROLE
+              value: "web"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 45
+            periodSeconds: 15
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: laravel
+  namespace: specguard
+spec:
+  selector:
+    app: laravel
+    role: web
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
